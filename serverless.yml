@@ -1,0 +1,245 @@
+service: pods-backend
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'ap-northeast-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    DYNAMODB_TABLE_PREFIX: ${self:service}-${self:provider.stage}
+    S3_BUCKET_NAME: ${self:service}-${self:provider.stage}-storage
+    COGNITO_USER_POOL_ID: ${cf:${self:service}-infrastructure-${self:provider.stage}.UserPoolId}
+    COGNITO_CLIENT_ID: ${cf:${self:service}-infrastructure-${self:provider.stage}.UserPoolClientId}
+    JWT_SECRET: ${ssm:/pods/${self:provider.stage}/jwt-secret}
+    OPENAI_API_KEY: ${ssm:/pods/${self:provider.stage}/openai-api-key}
+    TTS_API_KEY: ${ssm:/pods/${self:provider.stage}/tts-api-key}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_PREFIX}-*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminUpdateUserAttributes
+            - cognito-idp:AdminDeleteUser
+          Resource:
+            - "arn:aws:cognito-idp:${self:provider.region}:*:userpool/*"
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+
+custom:
+  webpack:
+    webpackConfig: webpack.config.js
+    includeModules: true
+  
+  serverless-offline:
+    httpPort: 3001
+    host: 0.0.0.0
+
+functions:
+  # 認証関連
+  login:
+    handler: src/handlers/auth/login.handler
+    events:
+      - http:
+          path: /auth/login
+          method: post
+          cors: true
+  
+  register:
+    handler: src/handlers/auth/register.handler
+    events:
+      - http:
+          path: /auth/register
+          method: post
+          cors: true
+  
+  refresh:
+    handler: src/handlers/auth/refresh.handler
+    events:
+      - http:
+          path: /auth/refresh
+          method: post
+          cors: true
+  
+  # ユーザー関連
+  getUserProfile:
+    handler: src/handlers/user/profile.getHandler
+    events:
+      - http:
+          path: /users/profile
+          method: get
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  updateUserProfile:
+    handler: src/handlers/user/profile.updateHandler
+    events:
+      - http:
+          path: /users/profile
+          method: put
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  followUser:
+    handler: src/handlers/user/follow.handler
+    events:
+      - http:
+          path: /users/follow
+          method: post
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  # ポッドキャスト関連
+  listPodcasts:
+    handler: src/handlers/podcast/list.handler
+    events:
+      - http:
+          path: /podcasts
+          method: get
+          cors: true
+  
+  getPodcast:
+    handler: src/handlers/podcast/get.handler
+    events:
+      - http:
+          path: /podcasts/{id}
+          method: get
+          cors: true
+  
+  createPodcast:
+    handler: src/handlers/podcast/create.handler
+    events:
+      - http:
+          path: /podcasts
+          method: post
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  updatePodcast:
+    handler: src/handlers/podcast/update.handler
+    events:
+      - http:
+          path: /podcasts/{id}
+          method: put
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  deletePodcast:
+    handler: src/handlers/podcast/delete.handler
+    events:
+      - http:
+          path: /podcasts/{id}
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  likePodcast:
+    handler: src/handlers/podcast/like.handler
+    events:
+      - http:
+          path: /podcasts/{id}/like
+          method: post
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  # 生成関連
+  generateScript:
+    handler: src/handlers/generation/generateScript.handler
+    timeout: 300
+    events:
+      - http:
+          path: /generation/script
+          method: post
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  generateAudio:
+    handler: src/handlers/generation/generateAudio.handler
+    timeout: 300
+    events:
+      - http:
+          path: /generation/audio
+          method: post
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  generatePodcast:
+    handler: src/handlers/generation/generatePodcast.handler
+    timeout: 300
+    events:
+      - http:
+          path: /generation/podcast
+          method: post
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  getGenerationStatus:
+    handler: src/handlers/generation/getStatus.handler
+    events:
+      - http:
+          path: /generation/jobs/{id}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizerFunc
+            resultTtlInSeconds: 0
+  
+  getVoices:
+    handler: src/handlers/generation/getVoices.handler
+    events:
+      - http:
+          path: /generation/voices
+          method: get
+          cors: true
+  
+  # 認証用Lambda Authorizer
+  authorizerFunc:
+    handler: src/middleware/auth.handler 
