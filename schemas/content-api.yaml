@@ -1,0 +1,706 @@
+openapi: 3.0.3
+info:
+  title: Content API
+  description: ポッドキャスト（コンテンツ）関連のAPI
+  version: 1.0.0
+
+paths:
+  /podcasts:
+    get:
+      summary: ポッドキャスト一覧取得
+      description: ポッドキャストの一覧を取得します
+      operationId: getPodcasts
+      tags:
+        - Podcasts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 取得件数
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: オフセット
+        - name: userId
+          in: query
+          schema:
+            type: string
+          description: 特定ユーザーのポッドキャストのみ取得
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: タグでフィルタリング
+      responses:
+        '200':
+          description: ポッドキャスト一覧を正常に取得しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPodcastsResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: ポッドキャスト作成
+      description: 新しいポッドキャストを作成します
+      operationId: createPodcast
+      tags:
+        - Podcasts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePodcastRequest'
+            examples:
+              basic_podcast:
+                summary: 基本的なポッドキャスト作成
+                value:
+                  title: "AIの未来について"
+                  description: "人工知能の発展について語ります"
+                  script: "こんにちは、今日はAIの未来について話したいと思います..."
+                  voiceId: "voice_001"
+                  isPublic: true
+                  tags: ["AI", "テクノロジー"]
+      responses:
+        '201':
+          description: ポッドキャストが正常に作成されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePodcastResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /podcasts/{podcastId}:
+    get:
+      summary: ポッドキャスト詳細取得
+      description: 指定されたポッドキャストの詳細情報を取得します
+      operationId: getPodcast
+      tags:
+        - Podcasts
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ポッドキャストID
+      responses:
+        '200':
+          description: ポッドキャスト詳細を正常に取得しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPodcastResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: ポッドキャスト更新
+      description: ポッドキャストの情報を更新します
+      operationId: updatePodcast
+      tags:
+        - Podcasts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ポッドキャストID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePodcastRequest'
+      responses:
+        '200':
+          description: ポッドキャストが正常に更新されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatePodcastResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: ポッドキャスト削除
+      description: ポッドキャストを削除します
+      operationId: deletePodcast
+      tags:
+        - Podcasts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ポッドキャストID
+      responses:
+        '200':
+          description: ポッドキャストが正常に削除されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletePodcastResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /podcasts/{podcastId}/comments:
+    get:
+      summary: ポッドキャストのコメント一覧取得
+      description: 指定されたポッドキャストのコメント一覧を取得します
+      operationId: getPodcastComments
+      tags:
+        - Comments
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ポッドキャストID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 取得件数
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: オフセット
+      responses:
+        '200':
+          description: コメント一覧を正常に取得しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCommentsResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: ポッドキャストにコメント投稿
+      description: 指定されたポッドキャストにコメントを投稿します
+      operationId: createComment
+      tags:
+        - Comments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ポッドキャストID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: コメントが正常に投稿されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCommentResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    CreatePodcastRequest:
+      type: object
+      required:
+        - title
+        - script
+        - voiceId
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: ポッドキャストのタイトル
+          example: "AIの未来について"
+        description:
+          type: string
+          maxLength: 1000
+          description: ポッドキャストの説明
+          example: "人工知能の発展について語ります"
+        script:
+          type: string
+          minLength: 1
+          description: ポッドキャストの原稿
+          example: "こんにちは、今日はAIの未来について話したいと思います..."
+        voiceId:
+          type: string
+          description: 使用する音声ID
+          example: "voice_001"
+        isPublic:
+          type: boolean
+          default: true
+          description: 公開設定
+          example: true
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+          example: ["AI", "テクノロジー"]
+
+    UpdatePodcastRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: ポッドキャストのタイトル
+          example: "AIの未来について（更新版）"
+        description:
+          type: string
+          maxLength: 1000
+          description: ポッドキャストの説明
+          example: "人工知能の発展について詳しく語ります"
+        isPublic:
+          type: boolean
+          description: 公開設定
+          example: true
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+          example: ["AI", "テクノロジー", "未来"]
+
+    Podcast:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ポッドキャストID
+          example: "podcast_123456789"
+        title:
+          type: string
+          description: タイトル
+          example: "AIの未来について"
+        description:
+          type: string
+          nullable: true
+          description: 説明
+          example: "人工知能の発展について語ります"
+        script:
+          type: string
+          description: 原稿
+          example: "こんにちは、今日はAIの未来について話したいと思います..."
+        audioUrl:
+          type: string
+          format: uri
+          description: 音声ファイルURL
+          example: "https://example.com/audio/podcast_123456789.mp3"
+        thumbnailUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: サムネイル画像URL
+          example: "https://example.com/thumbnail.jpg"
+        duration:
+          type: integer
+          description: 再生時間（秒）
+          example: 1800
+        userId:
+          type: string
+          description: 作成者ユーザーID
+          example: "user_987654321"
+        username:
+          type: string
+          description: 作成者ユーザー名
+          example: "creator"
+        userDisplayName:
+          type: string
+          description: 作成者表示名
+          example: "Content Creator"
+        userAvatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: 作成者アバター画像URL
+          example: "https://example.com/avatar.jpg"
+        likesCount:
+          type: integer
+          description: いいね数
+          example: 42
+        commentsCount:
+          type: integer
+          description: コメント数
+          example: 5
+        sharesCount:
+          type: integer
+          description: シェア数
+          example: 3
+        viewsCount:
+          type: integer
+          description: 再生回数
+          example: 150
+        isPublic:
+          type: boolean
+          description: 公開設定
+          example: true
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ
+          example: ["AI", "テクノロジー"]
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+          example: "2024-01-15T10:30:00Z"
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: コメントID
+          example: "comment_123456789"
+        podcastId:
+          type: string
+          description: ポッドキャストID
+          example: "podcast_123456789"
+        userId:
+          type: string
+          description: ユーザーID
+          example: "user_123456789"
+        username:
+          type: string
+          description: ユーザー名
+          example: "johndoe"
+        userDisplayName:
+          type: string
+          description: ユーザー表示名
+          example: "John Doe"
+        userAvatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: ユーザーアバター画像URL
+          example: "https://example.com/avatar.jpg"
+        content:
+          type: string
+          description: コメント内容
+          example: "とても興味深い内容でした！"
+        likesCount:
+          type: integer
+          description: いいね数
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+          example: "2024-01-15T10:30:00Z"
+
+    CreateCommentRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: コメント内容
+          example: "とても興味深い内容でした！"
+
+    GetPodcastsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            podcasts:
+              type: array
+              items:
+                $ref: '#/components/schemas/Podcast'
+            pagination:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: 総件数
+                  example: 100
+                limit:
+                  type: integer
+                  description: 取得件数
+                  example: 20
+                offset:
+                  type: integer
+                  description: オフセット
+                  example: 0
+                hasMore:
+                  type: boolean
+                  description: 次のページがあるかどうか
+                  example: true
+
+    GetPodcastResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Podcast'
+
+    CreatePodcastResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Podcast'
+
+    UpdatePodcastResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Podcast'
+
+    DeletePodcastResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "ポッドキャストが削除されました"
+
+    GetCommentsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+            pagination:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: 総件数
+                  example: 50
+                limit:
+                  type: integer
+                  description: 取得件数
+                  example: 20
+                offset:
+                  type: integer
+                  description: オフセット
+                  example: 0
+                hasMore:
+                  type: boolean
+                  description: 次のページがあるかどうか
+                  example: true
+
+    CreateCommentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Comment'
+
+  responses:
+    ValidationError:
+      description: リクエストが無効です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "VALIDATION_ERROR"
+                  message:
+                    type: string
+                    example: "入力データが無効です"
+
+    UnauthorizedError:
+      description: 認証が必要です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "UNAUTHORIZED"
+                  message:
+                    type: string
+                    example: "認証が必要です"
+
+    ForbiddenError:
+      description: アクセス権限がありません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "FORBIDDEN"
+                  message:
+                    type: string
+                    example: "アクセス権限がありません"
+
+    NotFoundError:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "NOT_FOUND"
+                  message:
+                    type: string
+                    example: "リソースが見つかりません"
+
+    InternalError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "INTERNAL_ERROR"
+                  message:
+                    type: string
+                    example: "サーバー内部エラーが発生しました"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT認証トークン
+
+tags:
+  - name: Podcasts
+    description: ポッドキャスト管理API
+  - name: Comments
+    description: コメント管理API 

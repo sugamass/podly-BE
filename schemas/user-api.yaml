@@ -1,0 +1,483 @@
+openapi: 3.0.3
+info:
+  title: User API
+  description: ユーザー管理関連のAPI
+  version: 1.0.0
+
+paths:
+  /users:
+    post:
+      summary: ユーザー作成
+      description: 新しいユーザーアカウントを作成します
+      operationId: createUser
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+            examples:
+              basic_user:
+                summary: 基本的なユーザー作成
+                value:
+                  email: "user@example.com"
+                  username: "johndoe"
+                  displayName: "John Doe"
+              user_with_bio:
+                summary: プロフィール付きユーザー作成
+                value:
+                  email: "creator@example.com"
+                  username: "podcastcreator"
+                  displayName: "Podcast Creator"
+                  bio: "ポッドキャスト制作が趣味です"
+      responses:
+        '201':
+          description: ユーザーが正常に作成されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}:
+    get:
+      summary: ユーザー情報取得
+      description: 指定されたユーザーの情報を取得します
+      operationId: getUser
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザーID
+      responses:
+        '200':
+          description: ユーザー情報を正常に取得しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: ユーザー情報更新
+      description: ユーザー情報を更新します
+      operationId: updateUser
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザーID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: ユーザー情報を正常に更新しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateUserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}/follow:
+    post:
+      summary: ユーザーフォロー
+      description: 指定されたユーザーをフォローします
+      operationId: followUser
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: フォローするユーザーID
+      responses:
+        '200':
+          description: フォローが正常に完了しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: ユーザーフォロー解除
+      description: 指定されたユーザーのフォローを解除します
+      operationId: unfollowUser
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: フォロー解除するユーザーID
+      responses:
+        '200':
+          description: フォロー解除が正常に完了しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnfollowResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - username
+        - displayName
+      properties:
+        email:
+          type: string
+          format: email
+          description: ユーザーのメールアドレス
+          example: "user@example.com"
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: ユーザー名（英数字とアンダースコアのみ）
+          example: "johndoe"
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 表示名
+          example: "John Doe"
+        bio:
+          type: string
+          maxLength: 500
+          description: プロフィール（任意）
+          example: "ポッドキャスト制作が趣味です"
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 表示名
+          example: "John Doe"
+        bio:
+          type: string
+          maxLength: 500
+          description: プロフィール
+          example: "ポッドキャスト制作が趣味です"
+        avatarUrl:
+          type: string
+          format: uri
+          description: アバター画像URL
+          example: "https://example.com/avatar.jpg"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ユーザーID
+          example: "user_123456789"
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "user@example.com"
+        username:
+          type: string
+          description: ユーザー名
+          example: "johndoe"
+        displayName:
+          type: string
+          description: 表示名
+          example: "John Doe"
+        bio:
+          type: string
+          nullable: true
+          description: プロフィール
+          example: "ポッドキャスト制作が趣味です"
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: アバター画像URL
+          example: "https://example.com/avatar.jpg"
+        isVerified:
+          type: boolean
+          description: 認証済みフラグ
+          example: false
+        followersCount:
+          type: integer
+          minimum: 0
+          description: フォロワー数
+          example: 0
+        followingCount:
+          type: integer
+          minimum: 0
+          description: フォロー中数
+          example: 0
+        podcastsCount:
+          type: integer
+          minimum: 0
+          description: 投稿ポッドキャスト数
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+          example: "2024-01-15T10:30:00Z"
+
+    CreateUserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/User'
+
+    GetUserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/User'
+
+    UpdateUserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/User'
+
+    FollowResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "フォローしました"
+
+    UnfollowResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "フォローを解除しました"
+
+  responses:
+    ValidationError:
+      description: リクエストが無効です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "VALIDATION_ERROR"
+                  message:
+                    type: string
+                    example: "入力データが無効です"
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                          example: "email"
+                        message:
+                          type: string
+                          example: "有効なメールアドレスを入力してください"
+
+    ConflictError:
+      description: リソースが既に存在します
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "USER_CONFLICT"
+                  message:
+                    type: string
+                    example: "このメールアドレスまたはユーザー名は既に使用されています"
+
+    UnauthorizedError:
+      description: 認証が必要です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "UNAUTHORIZED"
+                  message:
+                    type: string
+                    example: "認証が必要です"
+
+    ForbiddenError:
+      description: アクセス権限がありません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "FORBIDDEN"
+                  message:
+                    type: string
+                    example: "アクセス権限がありません"
+
+    NotFoundError:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "NOT_FOUND"
+                  message:
+                    type: string
+                    example: "リソースが見つかりません"
+
+    InternalError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "INTERNAL_ERROR"
+                  message:
+                    type: string
+                    example: "サーバー内部エラーが発生しました"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT認証トークン
+
+tags:
+  - name: Users
+    description: ユーザー管理API 

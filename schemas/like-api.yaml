@@ -1,0 +1,452 @@
+openapi: 3.0.3
+info:
+  title: Like API
+  description: いいね機能関連のAPI
+  version: 1.0.0
+
+paths:
+  /podcasts/{podcastId}/like:
+    post:
+      summary: ポッドキャストにいいね
+      description: 指定されたポッドキャストにいいねを追加します
+      operationId: likePodcast
+      tags:
+        - Likes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ポッドキャストID
+      responses:
+        '200':
+          description: いいねが正常に追加されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: 既にいいね済みです
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "ALREADY_LIKED"
+                      message:
+                        type: string
+                        example: "既にいいね済みです"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: ポッドキャストのいいね解除
+      description: 指定されたポッドキャストのいいねを解除します
+      operationId: unlikePodcast
+      tags:
+        - Likes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ポッドキャストID
+      responses:
+        '200':
+          description: いいね解除が正常に完了しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlikeResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /comments/{commentId}/like:
+    post:
+      summary: コメントにいいね
+      description: 指定されたコメントにいいねを追加します
+      operationId: likeComment
+      tags:
+        - Likes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: コメントID
+      responses:
+        '200':
+          description: いいねが正常に追加されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: 既にいいね済みです
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "ALREADY_LIKED"
+                      message:
+                        type: string
+                        example: "既にいいね済みです"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: コメントのいいね解除
+      description: 指定されたコメントのいいねを解除します
+      operationId: unlikeComment
+      tags:
+        - Likes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: コメントID
+      responses:
+        '200':
+          description: いいね解除が正常に完了しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlikeResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}/likes:
+    get:
+      summary: ユーザーのいいね一覧取得
+      description: 指定されたユーザーがいいねしたポッドキャスト一覧を取得します
+      operationId: getUserLikes
+      tags:
+        - Likes
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザーID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 取得件数
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: オフセット
+      responses:
+        '200':
+          description: いいね一覧を正常に取得しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserLikesResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    Like:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: ユーザーID
+          example: "user_123456789"
+        podcastId:
+          type: string
+          description: ポッドキャストID
+          example: "podcast_123456789"
+        createdAt:
+          type: string
+          format: date-time
+          description: いいね日時
+          example: "2024-01-15T10:30:00Z"
+
+    LikeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "いいねしました"
+            likesCount:
+              type: integer
+              description: 現在のいいね数
+              example: 42
+
+    UnlikeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "いいねを解除しました"
+            likesCount:
+              type: integer
+              description: 現在のいいね数
+              example: 41
+
+    PodcastSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ポッドキャストID
+          example: "podcast_123456789"
+        title:
+          type: string
+          description: タイトル
+          example: "AIの未来について"
+        description:
+          type: string
+          nullable: true
+          description: 説明
+          example: "人工知能の発展について語ります"
+        thumbnailUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: サムネイル画像URL
+          example: "https://example.com/thumbnail.jpg"
+        duration:
+          type: integer
+          description: 再生時間（秒）
+          example: 1800
+        userId:
+          type: string
+          description: 作成者ユーザーID
+          example: "user_987654321"
+        username:
+          type: string
+          description: 作成者ユーザー名
+          example: "creator"
+        userDisplayName:
+          type: string
+          description: 作成者表示名
+          example: "Content Creator"
+        userAvatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: 作成者アバター画像URL
+          example: "https://example.com/avatar.jpg"
+        likesCount:
+          type: integer
+          description: いいね数
+          example: 42
+        commentsCount:
+          type: integer
+          description: コメント数
+          example: 5
+        viewsCount:
+          type: integer
+          description: 再生回数
+          example: 150
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+          example: "2024-01-15T10:30:00Z"
+        likedAt:
+          type: string
+          format: date-time
+          description: いいね日時
+          example: "2024-01-16T14:20:00Z"
+
+    GetUserLikesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            likes:
+              type: array
+              items:
+                $ref: '#/components/schemas/PodcastSummary'
+            pagination:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: 総件数
+                  example: 100
+                limit:
+                  type: integer
+                  description: 取得件数
+                  example: 20
+                offset:
+                  type: integer
+                  description: オフセット
+                  example: 0
+                hasMore:
+                  type: boolean
+                  description: 次のページがあるかどうか
+                  example: true
+
+  responses:
+    ValidationError:
+      description: リクエストが無効です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "VALIDATION_ERROR"
+                  message:
+                    type: string
+                    example: "入力データが無効です"
+
+    UnauthorizedError:
+      description: 認証が必要です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "UNAUTHORIZED"
+                  message:
+                    type: string
+                    example: "認証が必要です"
+
+    NotFoundError:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "NOT_FOUND"
+                  message:
+                    type: string
+                    example: "リソースが見つかりません"
+
+    InternalError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "INTERNAL_ERROR"
+                  message:
+                    type: string
+                    example: "サーバー内部エラーが発生しました"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT認証トークン
+
+tags:
+  - name: Likes
+    description: いいね機能API 

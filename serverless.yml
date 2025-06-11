@@ -5,7 +5,7 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs18.x
-  region: ${opt:region, 'ap-northeast-1'}
+  region: ap-northeast-1
   stage: ${opt:stage, 'dev'}
   memorySize: 512
   timeout: 30
@@ -90,6 +90,14 @@ functions:
           cors: true
   
   # ユーザー関連
+  createUser:
+    handler: src/handlers/user/create.handler
+    events:
+      - http:
+          path: /users
+          method: post
+          cors: true
+
   getUserProfile:
     handler: src/handlers/user/profile.getHandler
     events:

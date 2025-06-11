@@ -1,0 +1,191 @@
+openapi: 3.0.3
+info:
+  title: Podcast Platform API
+  description: ポッドキャストの原稿と音声をAIで自動生成し、配信するプラットフォームのAPI
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@podcastplatform.com
+
+servers:
+  - url: https://api.podcastplatform.com/v1
+    description: Production server
+  - url: https://dev-api.podcastplatform.com/v1
+    description: Development server
+
+paths:
+  # User API
+  /users:
+    $ref: './user-api.yaml#/paths/~1users'
+  /users/{userId}:
+    $ref: './user-api.yaml#/paths/~1users~1{userId}'
+  /users/{userId}/follow:
+    $ref: './user-api.yaml#/paths/~1users~1{userId}~1follow'
+
+  # Content API
+  /podcasts:
+    $ref: './content-api.yaml#/paths/~1podcasts'
+  /podcasts/{podcastId}:
+    $ref: './content-api.yaml#/paths/~1podcasts~1{podcastId}'
+  /podcasts/{podcastId}/comments:
+    $ref: './content-api.yaml#/paths/~1podcasts~1{podcastId}~1comments'
+
+  # Like API
+  /podcasts/{podcastId}/like:
+    $ref: './like-api.yaml#/paths/~1podcasts~1{podcastId}~1like'
+  /comments/{commentId}/like:
+    $ref: './like-api.yaml#/paths/~1comments~1{commentId}~1like'
+  /users/{userId}/likes:
+    $ref: './like-api.yaml#/paths/~1users~1{userId}~1likes'
+
+components:
+  # 共通のセキュリティスキーマ
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT認証トークン
+
+  # 共通のレスポンススキーマ
+  responses:
+    ValidationError:
+      description: リクエストが無効です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "VALIDATION_ERROR"
+                  message:
+                    type: string
+                    example: "入力データが無効です"
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                          example: "email"
+                        message:
+                          type: string
+                          example: "有効なメールアドレスを入力してください"
+
+    UnauthorizedError:
+      description: 認証が必要です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "UNAUTHORIZED"
+                  message:
+                    type: string
+                    example: "認証が必要です"
+
+    ForbiddenError:
+      description: アクセス権限がありません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "FORBIDDEN"
+                  message:
+                    type: string
+                    example: "アクセス権限がありません"
+
+    NotFoundError:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "NOT_FOUND"
+                  message:
+                    type: string
+                    example: "リソースが見つかりません"
+
+    ConflictError:
+      description: リソースが既に存在します
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "CONFLICT"
+                  message:
+                    type: string
+                    example: "リソースが既に存在します"
+
+    InternalError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "INTERNAL_ERROR"
+                  message:
+                    type: string
+                    example: "サーバー内部エラーが発生しました"
+
+tags:
+  - name: Users
+    description: ユーザー管理API
+  - name: Podcasts
+    description: ポッドキャスト管理API
+  - name: Comments
+    description: コメント管理API
+  - name: Likes
+    description: いいね機能API 
