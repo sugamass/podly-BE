@@ -7,9 +7,20 @@ export class UserRepository {
   private tableName: string;
 
   constructor() {
-    const dynamoClient = new DynamoDBClient({
+    // ローカル環境の設定
+    const isOffline = process.env.IS_OFFLINE === 'true';
+    const dynamoConfig = {
       region: process.env.REGION || 'ap-northeast-1',
-    });
+      ...(isOffline && {
+        endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
+        credentials: {
+          accessKeyId: 'local',
+          secretAccessKey: 'local',
+        },
+      }),
+    };
+    
+    const dynamoClient = new DynamoDBClient(dynamoConfig);
     this.client = DynamoDBDocumentClient.from(dynamoClient);
     this.tableName = `${process.env.DYNAMODB_TABLE_PREFIX}-users`;
   }

@@ -15,11 +15,14 @@ provider:
     REGION: ${self:provider.region}
     DYNAMODB_TABLE_PREFIX: ${self:service}-${self:provider.stage}
     S3_BUCKET_NAME: ${self:service}-${self:provider.stage}-storage
-    COGNITO_USER_POOL_ID: ${cf:${self:service}-infrastructure-${self:provider.stage}.UserPoolId}
-    COGNITO_CLIENT_ID: ${cf:${self:service}-infrastructure-${self:provider.stage}.UserPoolClientId}
-    JWT_SECRET: ${ssm:/pods/${self:provider.stage}/jwt-secret}
-    OPENAI_API_KEY: ${ssm:/pods/${self:provider.stage}/openai-api-key}
-    TTS_API_KEY: ${ssm:/pods/${self:provider.stage}/tts-api-key}
+    COGNITO_USER_POOL_ID: ${cf:${self:service}-infrastructure-${self:provider.stage}.UserPoolId, 'local-pool-id'}
+    COGNITO_CLIENT_ID: ${cf:${self:service}-infrastructure-${self:provider.stage}.UserPoolClientId, 'local-client-id'}
+    JWT_SECRET: ${ssm:/pods/${self:provider.stage}/jwt-secret, 'local-jwt-secret-key-for-development'}
+    OPENAI_API_KEY: ${ssm:/pods/${self:provider.stage}/openai-api-key, 'local-openai-key'}
+    TTS_API_KEY: ${ssm:/pods/${self:provider.stage}/tts-api-key, 'local-tts-key'}
+    # ローカル環境用のDynamoDB設定
+    DYNAMODB_ENDPOINT: ${self:custom.dynamodb.endpoint, ''}
+    IS_OFFLINE: ${self:custom.serverless-offline.isOffline, false}
   
   iam:
     role:
@@ -53,6 +56,7 @@ provider:
 plugins:
   - serverless-webpack
   - serverless-offline
+  - serverless-dynamodb-local
 
 custom:
   webpack:
@@ -62,6 +66,21 @@ custom:
   serverless-offline:
     httpPort: 3001
     host: 0.0.0.0
+    isOffline: true
+  
+  # DynamoDB Local設定
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: false
+      convertEmptyValues: true
+    endpoint: http://localhost:8000
 
 functions:
   # 認証関連
@@ -250,4 +269,38 @@ functions:
   
   # 認証用Lambda Authorizer
   authorizerFunc:
-    handler: src/middleware/auth.handler 
+    handler: src/middleware/auth.handler
+
+# DynamoDBテーブル定義
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}-users
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: email-index
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+          - IndexName: username-index
+            KeySchema:
+              - AttributeName: username
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+        BillingMode: PAY_PER_REQUEST 
