@@ -1,33 +1,25 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
-  mode: 'production',
-  entry: './src/index.ts',
-  target: 'node',
+  mode: "development",
+  target: "node",
   module: {
     rules: [
       {
         test: /\.ts$/,
-        use: 'ts-loader',
+        use: "ts-loader",
         exclude: /node_modules/,
       },
     ],
   },
   resolve: {
-    extensions: ['.ts', '.js'],
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
-    },
+    extensions: [".ts", ".js"],
   },
   output: {
-    libraryTarget: 'commonjs2',
-    path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
+    libraryTarget: "commonjs2",
+    filename: "[name].js",
   },
   externals: {
-    'aws-sdk': 'aws-sdk',
+    "aws-sdk": "aws-sdk",
   },
-  optimization: {
-    minimize: false,
-  },
-}; 
+};

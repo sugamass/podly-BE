@@ -1,6 +1,13 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { User, UserProfile } from '../types/user';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  GetCommand,
+  UpdateCommand,
+  DeleteCommand,
+  QueryCommand,
+} from "@aws-sdk/lib-dynamodb";
+import { User, UserProfile } from "../types/user";
 
 export class UserRepository {
   private client: DynamoDBDocumentClient;
@@ -8,18 +15,18 @@ export class UserRepository {
 
   constructor() {
     // ローカル環境の設定
-    const isOffline = process.env.IS_OFFLINE === 'true';
+    const isOffline = process.env.IS_OFFLINE === "true";
     const dynamoConfig = {
-      region: process.env.REGION || 'ap-northeast-1',
+      region: process.env.REGION || "ap-northeast-1",
       ...(isOffline && {
-        endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
+        endpoint: process.env.DYNAMODB_ENDPOINT || "http://localhost:8000",
         credentials: {
-          accessKeyId: 'local',
-          secretAccessKey: 'local',
+          accessKeyId: "local",
+          secretAccessKey: "local",
         },
       }),
     };
-    
+
     const dynamoClient = new DynamoDBClient(dynamoConfig);
     this.client = DynamoDBDocumentClient.from(dynamoClient);
     this.tableName = `${process.env.DYNAMODB_TABLE_PREFIX}-users`;
@@ -32,7 +39,7 @@ export class UserRepository {
     const command = new PutCommand({
       TableName: this.tableName,
       Item: user,
-      ConditionExpression: 'attribute_not_exists(id)',
+      ConditionExpression: "attribute_not_exists(id)",
     });
 
     await this.client.send(command);
@@ -49,20 +56,23 @@ export class UserRepository {
     });
 
     const result = await this.client.send(command);
-    return result.Item as User || null;
+    return (result.Item as User) || null;
   }
 
   /**
    * メールアドレスまたはユーザー名でユーザーを検索
    */
-  async findByEmailOrUsername(email: string, username: string): Promise<User | null> {
+  async findByEmailOrUsername(
+    email: string,
+    username: string
+  ): Promise<User | null> {
     // メールアドレスで検索
     const emailCommand = new QueryCommand({
       TableName: this.tableName,
-      IndexName: 'email-index',
-      KeyConditionExpression: 'email = :email',
+      IndexName: "email-index",
+      KeyConditionExpression: "email = :email",
       ExpressionAttributeValues: {
-        ':email': email,
+        ":email": email,
       },
     });
 
@@ -74,10 +84,10 @@ export class UserRepository {
     // ユーザー名で検索
     const usernameCommand = new QueryCommand({
       TableName: this.tableName,
-      IndexName: 'username-index',
-      KeyConditionExpression: 'username = :username',
+      IndexName: "username-index",
+      KeyConditionExpression: "username = :username",
       ExpressionAttributeValues: {
-        ':username': username,
+        ":username": username,
       },
     });
 
@@ -110,7 +120,7 @@ export class UserRepository {
     const expressionAttributeValues: Record<string, any> = {};
 
     Object.entries(updates).forEach(([key, value], index) => {
-      if (key !== 'id' && value !== undefined) {
+      if (key !== "id" && value !== undefined) {
         const attrName = `#attr${index}`;
         const attrValue = `:val${index}`;
         updateExpressions.push(`${attrName} = ${attrValue}`);
@@ -124,7 +134,7 @@ export class UserRepository {
     const command = new UpdateCommand({
       TableName: this.tableName,
       Key: { id: userId },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
     });
@@ -143,4 +153,4 @@ export class UserRepository {
 
     await this.client.send(command);
   }
-} 
+}

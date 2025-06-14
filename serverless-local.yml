@@ -24,21 +24,20 @@ provider:
     # ローカル環境用のDynamoDB設定
     DYNAMODB_ENDPOINT: http://localhost:8000
     IS_OFFLINE: true
+    # ts-node設定
+    TS_NODE_PROJECT: ./tsconfig.json
 
 plugins:
-  - serverless-webpack
   - serverless-offline
   - serverless-dynamodb-local
 
 custom:
-  webpack:
-    webpackConfig: webpack.config.js
-    includeModules: true
   
   serverless-offline:
     httpPort: 3001
-    host: 0.0.0.0
+    host: localhost
     isOffline: true
+    useChildProcesses: true
   
   # DynamoDB Local設定
   dynamodb:
