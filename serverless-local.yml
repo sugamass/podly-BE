@@ -28,10 +28,13 @@ provider:
     TS_NODE_PROJECT: ./tsconfig.json
 
 plugins:
+  - serverless-webpack
   - serverless-offline
-  - serverless-dynamodb-local
 
 custom:
+  webpack:
+    webpackConfig: webpack.config.js
+    includeModules: true
   
   serverless-offline:
     httpPort: 3001
@@ -39,19 +42,19 @@ custom:
     isOffline: true
     useChildProcesses: true
   
-  # DynamoDB Local設定
-  dynamodb:
-    stages:
-      - dev
-    start:
-      port: 8000
-      inMemory: false
-      heapInitial: 200m
-      heapMax: 1g
-      migrate: true
-      seed: false
-      convertEmptyValues: true
-    endpoint: http://localhost:8000
+  # DynamoDB Local設定（Docker使用のため無効化）
+  # dynamodb:
+  #   stages:
+  #     - dev
+  #   start:
+  #     port: 8000
+  #     inMemory: true
+  #     heapInitial: 200m
+  #     heapMax: 1g
+  #     migrate: true
+  #     seed: false
+  #     convertEmptyValues: true
+  #   endpoint: http://localhost:8000
 
 functions:
   # ユーザー関連

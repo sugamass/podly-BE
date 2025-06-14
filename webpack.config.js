@@ -1,8 +1,10 @@
 const path = require("path");
+const serverlessWebpack = require("serverless-webpack");
 
 module.exports = {
   mode: "development",
   target: "node",
+  entry: serverlessWebpack.lib.entries,
   module: {
     rules: [
       {
@@ -17,6 +19,7 @@ module.exports = {
   },
   output: {
     libraryTarget: "commonjs2",
+    path: path.join(__dirname, ".webpack"),
     filename: "[name].js",
   },
   externals: {
