@@ -24,8 +24,6 @@ provider:
     # ローカル環境用のDynamoDB設定
     DYNAMODB_ENDPOINT: http://localhost:8000
     IS_OFFLINE: true
-    # ts-node設定
-    TS_NODE_PROJECT: ./tsconfig.json
 
 plugins:
   - serverless-webpack
@@ -41,20 +39,6 @@ custom:
     host: localhost
     isOffline: true
     useChildProcesses: true
-  
-  # DynamoDB Local設定（Docker使用のため無効化）
-  # dynamodb:
-  #   stages:
-  #     - dev
-  #   start:
-  #     port: 8000
-  #     inMemory: true
-  #     heapInitial: 200m
-  #     heapMax: 1g
-  #     migrate: true
-  #     seed: false
-  #     convertEmptyValues: true
-  #   endpoint: http://localhost:8000
 
 functions:
   # ユーザー関連

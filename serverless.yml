@@ -56,7 +56,6 @@ provider:
 plugins:
   - serverless-webpack
   - serverless-offline
-  - serverless-dynamodb-local
 
 custom:
   webpack:
@@ -67,20 +66,6 @@ custom:
     httpPort: 3001
     host: 0.0.0.0
     isOffline: true
-  
-  # DynamoDB Local設定
-  dynamodb:
-    stages:
-      - dev
-    start:
-      port: 8000
-      inMemory: true
-      heapInitial: 200m
-      heapMax: 1g
-      migrate: true
-      seed: false
-      convertEmptyValues: true
-    endpoint: http://localhost:8000
 
 functions:
   # 認証関連
