@@ -1,8 +1,8 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const {
+  DynamoDBClient,
   CreateTableCommand,
-  DynamoDBDocumentClient,
-} = require("@aws-sdk/lib-dynamodb");
+} = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient } = require("@aws-sdk/lib-dynamodb");
 
 // ローカル環境のDynamoDB設定
 const dynamoConfig = {

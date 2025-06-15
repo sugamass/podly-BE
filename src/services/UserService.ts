@@ -1,5 +1,16 @@
-import { UserRepository } from '../repositories/UserRepository';
-import { User, CreateUserRequest, UpdateUserRequest, UserProfile, CreateUserRequestSchema, UpdateUserRequestSchema } from '../types/user';
+import { UserRepository } from "../repositories/UserRepository";
+import {
+  User,
+  CreateUserRequest,
+  UpdateUserRequest,
+  UserProfile,
+  CreateUserRequestSchema,
+  UpdateUserRequestSchema,
+  CreateUserRequestApi,
+  UpdateUserRequestApi,
+  convertCreateUserRequestToInternal,
+  convertUpdateUserRequestToInternal,
+} from "../types/user";
 
 export class UserService {
   private userRepository: UserRepository;
@@ -11,29 +22,37 @@ export class UserService {
   /**
    * ユーザー作成
    */
-  async createUser(data: CreateUserRequest): Promise<User> {
-    // バリデーション
-    const validatedData = this.validateSchema<CreateUserRequest>(CreateUserRequestSchema, data);
-    
+  async createUser(apiData: any): Promise<User> {
+    // バリデーション（APIスキーマ）
+    const validatedApiData = this.validateSchema<CreateUserRequestApi>(
+      CreateUserRequestSchema,
+      apiData
+    );
+
+    // 内部型に変換
+    const internalData = convertCreateUserRequestToInternal(validatedApiData);
+
     // ユーザー名・メールアドレスの重複チェック
     const existingUser = await this.userRepository.findByEmailOrUsername(
-      validatedData.email,
-      validatedData.username
+      internalData.email,
+      internalData.username
     );
-    
+
     if (existingUser) {
-      const error = new Error('メールアドレスまたはユーザー名が既に使用されています');
-      error.name = 'ConflictError';
+      const error = new Error(
+        "メールアドレスまたはユーザー名が既に使用されています"
+      );
+      error.name = "ConflictError";
       throw error;
     }
-    
+
     // ユーザー作成
     const newUser: User = {
       id: this.generateUserId(),
-      email: validatedData.email,
-      username: validatedData.username,
-      displayName: validatedData.displayName,
-      bio: validatedData.bio,
+      email: internalData.email,
+      username: internalData.username,
+      displayName: internalData.displayName,
+      bio: internalData.bio,
       avatarUrl: undefined,
       isVerified: false,
       followersCount: 0,
@@ -42,7 +61,7 @@ export class UserService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    
+
     return await this.userRepository.create(newUser);
   }
 
@@ -56,35 +75,44 @@ export class UserService {
   /**
    * ユーザープロフィール更新
    */
-  async updateUserProfile(userId: string, data: UpdateUserRequest): Promise<UserProfile | null> {
-    // バリデーション
-    const validatedData = this.validateSchema<UpdateUserRequest>(UpdateUserRequestSchema, data);
-    
+  async updateUserProfile(
+    userId: string,
+    apiData: any
+  ): Promise<UserProfile | null> {
+    // バリデーション（APIスキーマ）
+    const validatedApiData = this.validateSchema<UpdateUserRequestApi>(
+      UpdateUserRequestSchema,
+      apiData
+    );
+
+    // 内部型に変換
+    const internalData = convertUpdateUserRequestToInternal(validatedApiData);
+
     // ユーザー存在チェック
     const existingUser = await this.userRepository.findById(userId);
     if (!existingUser) {
-      const error = new Error('ユーザーが見つかりません');
-      error.name = 'NotFoundError';
+      const error = new Error("ユーザーが見つかりません");
+      error.name = "NotFoundError";
       throw error;
     }
-    
+
     // 更新データを作成
     const updateData: Partial<User> = {
       updatedAt: new Date().toISOString(),
     };
-    
-    if (validatedData.displayName !== undefined) {
-      updateData.displayName = validatedData.displayName;
+
+    if (internalData.displayName !== undefined) {
+      updateData.displayName = internalData.displayName;
     }
-    if (validatedData.bio !== undefined) {
-      updateData.bio = validatedData.bio;
+    if (internalData.bio !== undefined) {
+      updateData.bio = internalData.bio;
     }
-    if (validatedData.avatarUrl !== undefined) {
-      updateData.avatarUrl = validatedData.avatarUrl;
+    if (internalData.avatarUrl !== undefined) {
+      updateData.avatarUrl = internalData.avatarUrl;
     }
-    
+
     await this.userRepository.update(userId, updateData);
-    
+
     return this.userRepository.getProfile(userId);
   }
 
@@ -95,9 +123,11 @@ export class UserService {
     try {
       return schema.parse(data);
     } catch (error: any) {
-      const validationError = new Error('バリデーションエラー');
-      validationError.name = 'ValidationError';
-      (validationError as any).errors = error.errors?.map((e: any) => e.message) || [error.message];
+      const validationError = new Error("バリデーションエラー");
+      validationError.name = "ValidationError";
+      (validationError as any).errors = error.errors?.map(
+        (e: any) => e.message
+      ) || [error.message];
       throw validationError;
     }
   }
@@ -108,4 +138,4 @@ export class UserService {
   private generateUserId(): string {
     return `user_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   }
-} 
+}
