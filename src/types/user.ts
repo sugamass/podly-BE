@@ -18,11 +18,11 @@ export const UserSchema = z.object({
 
 export type User = z.infer<typeof UserSchema>;
 
-// ユーザー作成リクエスト（API用・スネークケース）
+// ユーザー作成リクエスト（API用・キャメルケース）
 export const CreateUserRequestSchema = z.object({
   email: z.string().email(),
   username: z.string().min(3).max(30),
-  display_name: z.string().min(1).max(50),
+  displayName: z.string().min(1).max(50),
   bio: z.string().max(500).optional(),
 });
 
@@ -36,11 +36,11 @@ export interface CreateUserRequest {
   bio?: string;
 }
 
-// ユーザー更新リクエスト（API用・スネークケース）
+// ユーザー更新リクエスト（API用・キャメルケース）
 export const UpdateUserRequestSchema = z.object({
-  display_name: z.string().min(1).max(50).optional(),
+  displayName: z.string().min(1).max(50).optional(),
   bio: z.string().max(500).optional(),
-  avatar_url: z.string().url().optional(),
+  avatarUrl: z.string().url().optional(),
 });
 
 export type UpdateUserRequestApi = z.infer<typeof UpdateUserRequestSchema>;
@@ -74,43 +74,43 @@ export const convertCreateUserRequestToInternal = (
 ): CreateUserRequest => ({
   email: apiRequest.email,
   username: apiRequest.username,
-  displayName: apiRequest.display_name,
+  displayName: apiRequest.displayName,
   bio: apiRequest.bio,
 });
 
 export const convertUpdateUserRequestToInternal = (
   apiRequest: UpdateUserRequestApi
 ): UpdateUserRequest => ({
-  displayName: apiRequest.display_name,
+  displayName: apiRequest.displayName,
   bio: apiRequest.bio,
-  avatarUrl: apiRequest.avatar_url,
+  avatarUrl: apiRequest.avatarUrl,
 });
 
 export const convertUserToApi = (user: User): any => ({
   id: user.id,
   email: user.email,
   username: user.username,
-  display_name: user.displayName,
+  displayName: user.displayName,
   bio: user.bio,
-  avatar_url: user.avatarUrl,
-  is_verified: user.isVerified,
-  followers_count: user.followersCount,
-  following_count: user.followingCount,
-  podcasts_count: user.podcastsCount,
-  created_at: user.createdAt,
-  updated_at: user.updatedAt,
+  avatarUrl: user.avatarUrl,
+  isVerified: user.isVerified,
+  followersCount: user.followersCount,
+  followingCount: user.followingCount,
+  podcastsCount: user.podcastsCount,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
 });
 
 export const convertUserProfileToApi = (userProfile: UserProfile): any => ({
   id: userProfile.id,
   username: userProfile.username,
-  display_name: userProfile.displayName,
+  displayName: userProfile.displayName,
   bio: userProfile.bio,
-  avatar_url: userProfile.avatarUrl,
-  is_verified: userProfile.isVerified,
-  followers_count: userProfile.followersCount,
-  following_count: userProfile.followingCount,
-  podcasts_count: userProfile.podcastsCount,
-  created_at: userProfile.createdAt,
-  updated_at: userProfile.updatedAt,
+  avatarUrl: userProfile.avatarUrl,
+  isVerified: userProfile.isVerified,
+  followersCount: userProfile.followersCount,
+  followingCount: userProfile.followingCount,
+  podcastsCount: userProfile.podcastsCount,
+  createdAt: userProfile.createdAt,
+  updatedAt: userProfile.updatedAt,
 });
