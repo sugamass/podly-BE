@@ -1,0 +1,411 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Podcast Platform Backend Development Rules
+
+## CRITICAL: AI Assistant Instructions
+
+**ALWAYS follow these rules when working on this project:**
+
+1. **NEVER edit files in `src/types/generated/`** - These are auto-generated
+2. **ALWAYS run type generation after schema changes** - `npm run generate:types`
+3. **ALWAYS use auto-generated types** - Import from `../types`
+4. **NEVER use `any` type** - Use proper TypeScript types
+5. **ALWAYS follow the layered architecture** - Handler → Service → Repository
+
+---
+
+## Technical Stack
+
+### Core Technologies
+```yaml
+Language: TypeScript + Node.js 18.x
+Framework: Serverless Framework v3
+Runtime: AWS Lambda
+API: AWS API Gateway
+Build: Webpack 5
+```
+
+### Data & Storage
+```yaml
+Database: Amazon DynamoDB
+Storage: Amazon S3
+Local_Dev: DynamoDB Local (Docker)
+```
+
+### Authentication & Security
+```yaml
+Auth: AWS Cognito
+JWT: jsonwebtoken
+Password: bcryptjs
+```
+
+### AI & External Services
+```yaml
+AI: OpenAI API (GPT)
+TTS: TTS API
+HTTP: axios
+```
+
+### Development Tools
+```yaml
+Types: TypeScript 5.0
+Lint: ESLint + TypeScript ESLint
+Test: Jest + ts-jest
+Validation: Zod
+Type_Generation: openapi-typescript
+```
+
+---
+
+## Architecture Pattern
+
+```
+API Gateway → Lambda Handlers → Services → Repositories → DynamoDB/S3
+```
+
+**Layer Responsibilities:**
+- **Handlers** (`src/handlers/`): Lambda entry points, request/response transformation
+- **Services** (`src/services/`): Business logic, orchestrate repositories
+- **Repositories** (`src/repositories/`): Data access abstraction, DynamoDB/S3 operations
+
+---
+
+## Folder Structure (READ ONLY for AI)
+
+```
+podly-BE/
+├── src/
+│   ├── handlers/          # Lambda handlers
+│   │   ├── auth/         # Authentication
+│   │   ├── user/         # User management  
+│   │   ├── podcast/      # Podcast operations
+│   │   └── generate/     # AI generation
+│   ├── services/         # Business logic
+│   │   ├── UserService.ts
+│   │   ├── PodcastService.ts
+│   │   └── AIService.ts
+│   ├── repositories/     # Data access
+│   │   ├── UserRepository.ts
+│   │   └── PodcastRepository.ts
+│   ├── types/
+│   │   ├── generated/    # AUTO-GENERATED (DO NOT EDIT)
+│   │   │   ├── main-api.ts
+│   │   │   ├── user-api.ts
+│   │   │   ├── content-api.ts
+│   │   │   └── like-api.ts
+│   │   ├── index.ts      # Type exports
+│   │   ├── user.ts       # Manual user types
+│   │   ├── podcast.ts    # Manual podcast types
+│   │   ├── auth.ts       # Manual auth types
+│   │   └── api.ts        # Manual API types
+│   ├── utils/            # Utilities
+│   │   ├── jwt.ts
+│   │   ├── validation.ts
+│   │   └── response.ts
+│   └── constants/        # Constants
+│       ├── errors.ts
+│       └── env.ts
+├── schemas/              # OpenAPI schemas
+│   ├── main-api.yaml     # Main integration API
+│   ├── user-api.yaml     # User management API
+│   ├── content-api.yaml  # Content management API
+│   └── like-api.yaml     # Like functionality API
+├── scripts/              # Development scripts
+├── __tests__/            # Test files
+└── docker/               # Docker configs
+```
+
+---
+
+## MANDATORY: Type Generation Workflow
+
+### When to Generate Types
+```bash
+# ALWAYS run after ANY schema change
+npm run generate:types
+
+# Individual schema generation
+npm run generate:types:user     # User API only
+npm run generate:types:content  # Content API only  
+npm run generate:types:like     # Like API only
+npm run generate:types:main     # Main integration API only
+```
+
+### Generated Files (DO NOT EDIT)
+```
+src/types/generated/
+├── main-api.ts      # Integration API types
+├── user-api.ts      # User API types
+├── content-api.ts   # Content API types
+└── like-api.ts      # Like API types
+```
+
+### Correct Type Usage
+```typescript
+// ✅ CORRECT: Use auto-generated types
+import type {
+  CreatePodcastRequestBody,
+  GetPodcastsResponseData,
+  UserSchema,
+  PodcastSchema
+} from '../types';
+
+// ❌ WRONG: Manual type definition
+interface CreatePodcastRequest { ... }
+
+// ✅ CORRECT: Type-safe API handling
+const request: CreatePodcastRequestBody = {
+  title: 'Title',
+  script: 'Script content',
+  voiceId: 'voice_001'
+};
+
+function handleResponse(response: GetPodcastsResponseData) {
+  if (response.success && response.data) {
+    // TypeScript auto-inference works here
+    const podcasts = response.data.podcasts || [];
+  }
+}
+
+// ❌ WRONG: Type bypassing
+const data = response as any;
+```
+
+---
+
+## Development Commands
+
+### Essential Commands
+```bash
+# Type generation + dev server
+npm run dev:with-types
+
+# Type generation with file watching
+npm run generate:types:watch
+
+# Full local environment (DB + server)
+npm run dev:full
+
+# Database management
+npm run db:start          # Start local DynamoDB
+npm run db:stop           # Stop local DynamoDB
+npm run db:create-tables  # Create database tables
+
+# Testing
+npm test                  # Run all tests
+npm run test:watch        # Watch mode testing
+npm run test:api          # API integration tests
+
+# Code quality
+npm run lint              # ESLint check
+npm run lint:fix          # Auto-fix linting issues
+npm run build             # TypeScript compilation
+
+# Deployment
+npm run deploy:dev        # Deploy to development
+npm run deploy:staging    # Deploy to staging
+npm run deploy:prod       # Deploy to production
+```
+
+### Development Workflow
+```bash
+1. Edit API schema (schemas/*.yaml)
+2. npm run generate:types  # MANDATORY
+3. Update implementation code
+4. npm test               # Verify tests pass
+5. npm run build         # Verify compilation
+```
+
+---
+
+## Naming Conventions
+
+```typescript
+// Files: PascalCase
+UserService.ts
+PodcastRepository.ts
+
+// Variables/Functions: camelCase
+getUserById
+createPodcast
+
+// Constants: UPPER_SNAKE_CASE
+MAX_RETRY_COUNT
+DEFAULT_PAGE_SIZE
+
+// Types/Interfaces: PascalCase
+UserSchema
+CreatePodcastRequestBody
+```
+
+---
+
+## Environment Setup
+
+### Local Development
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start local DynamoDB
+npm run db:start
+
+# 3. Create database tables
+npm run db:create-tables
+
+# 4. Start development server with type generation
+npm run dev:with-types
+```
+
+### Environment Variables
+```bash
+# Local (.env.local)
+JWT_SECRET=local-jwt-secret-key
+OPENAI_API_KEY=your-openai-key
+TTS_API_KEY=your-tts-key
+
+# AWS (SSM Parameter Store)
+/pods/dev/jwt-secret
+/pods/dev/openai-api-key
+/pods/dev/tts-api-key
+```
+
+---
+
+## STRICT PROHIBITIONS for AI
+
+### ❌ NEVER DO THESE:
+
+1. **Edit generated type files**
+   ```bash
+   # These paths are READ-ONLY
+   src/types/generated/main-api.ts
+   src/types/generated/user-api.ts
+   src/types/generated/content-api.ts
+   src/types/generated/like-api.ts
+   ```
+
+2. **Create duplicate manual types**
+   ```typescript
+   // ❌ WRONG: If auto-generated type exists
+   interface CreatePodcastRequest { ... }
+   
+   // ✅ CORRECT: Use auto-generated
+   import type { CreatePodcastRequestBody } from '../types';
+   ```
+
+3. **Skip type generation after schema changes**
+   ```bash
+   # ❌ WRONG: Edit schema and forget this
+   # Edit schemas/user-api.yaml
+   # ... continue coding without type generation
+   
+   # ✅ CORRECT: Always regenerate
+   # Edit schemas/user-api.yaml
+   npm run generate:types
+   ```
+
+4. **Use any type**
+   ```typescript
+   // ❌ WRONG
+   const data = response as any;
+   
+   // ✅ CORRECT
+   const data: GetPodcastsResponseData = response;
+   ```
+
+5. **Hardcode environment variables**
+   ```typescript
+   // ❌ WRONG
+   const apiKey = "sk-1234567890abcdef";
+   
+   // ✅ CORRECT
+   const apiKey = process.env.OPENAI_API_KEY;
+   ```
+
+---
+
+## Error Troubleshooting
+
+### Type Generation Errors
+```bash
+# 1. Clear and regenerate
+rm -rf src/types/generated/
+npm run generate:types
+
+# 2. Validate schemas
+npx swagger-parser validate schemas/main-api.yaml
+
+# 3. Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### TypeScript Compilation Errors
+```bash
+# 1. Ensure types are current
+npm run generate:types
+npm run build
+
+# 2. Check tsconfig.json includes src/types/generated/
+```
+
+### Local Development Errors
+```bash
+# DynamoDB connection issues
+npm run db:stop
+npm run db:start
+
+# Port conflicts
+lsof -ti:3001 | xargs kill -9  # API server
+lsof -ti:8000 | xargs kill -9  # DynamoDB
+```
+
+---
+
+## Quality Checklist for AI
+
+### Before Code Completion:
+- [ ] API schema changes → `npm run generate:types` executed
+- [ ] `npm run build` succeeds
+- [ ] `npm test` passes
+- [ ] `npm run lint` has no errors
+- [ ] Using auto-generated types, not manual ones
+- [ ] No `any` types used
+- [ ] No hardcoded environment variables
+- [ ] Following layered architecture (Handler → Service → Repository)
+
+### Before Deployment Suggestions:
+- [ ] Type generation works in target environment
+- [ ] Type definitions match implementation
+- [ ] API documentation updated
+- [ ] Environment variables properly configured
+- [ ] Resource permissions correctly set
+
+---
+
+## Key File References
+
+### API Schemas (Source of Truth)
+- `schemas/main-api.yaml` - Integration API definition
+- `schemas/user-api.yaml` - User management API
+- `schemas/content-api.yaml` - Content management API  
+- `schemas/like-api.yaml` - Like functionality API
+
+### Type Definitions
+- `src/types/index.ts` - Main type exports
+- `src/types/generated/` - Auto-generated types (READ-ONLY)
+- `src/types/*.ts` - Manual type definitions
+
+### Configuration Files
+- `package.json` - Scripts and dependencies
+- `tsconfig.json` - TypeScript configuration
+- `serverless.yml` - AWS Lambda configuration
+- `docker-compose.yml` - Local development environment
+
+---
+
+**AI Memory: This is a TypeScript Serverless project with mandatory OpenAPI type generation. Always prioritize type safety and follow the established architecture patterns.**
