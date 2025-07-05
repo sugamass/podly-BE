@@ -9,6 +9,7 @@ const createDataForHlsAgent: AgentFunction = async ({
 }) => {
   const { outputDir, ifDeleteInput } = params;
   const { inputFilePath, outputBaseName } = namedInputs;
+  console.log("inputFilePath", inputFilePath);
   const hlsOptions = {
     segmentTime: 10,
     listSize: 0,

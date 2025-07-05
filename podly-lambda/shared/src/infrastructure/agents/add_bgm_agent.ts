@@ -14,13 +14,29 @@ if (process.env.FFPROBE_PATH) {
 
 const addBGMAgent: AgentFunction<
   { musicFileName: string },
-  string,
+  { outputFile: string },
   { voiceFile: string; outputFilePath: string; script: PodcastScript }
 > = async ({ namedInputs, params }) => {
   const { voiceFile, outputFilePath, script } = namedInputs;
-  const { musicFileName } = params;
-  const outputFile = path.resolve(outputFilePath);
-  const musicFile = path.resolve(musicFileName);
+
+  // 環境に応じたパス設定
+  const isLambda =
+    process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
+
+  let musicFile: string;
+  if (params?.musicFileName) {
+    musicFile = params.musicFileName;
+  } else {
+    // デフォルトのBGMファイルパス
+    let basePath: string;
+    if (isLambda) {
+      // TODO s3から取得する
+      basePath = "/tmp";
+    } else {
+      basePath = path.resolve(process.cwd(), "../../../");
+    }
+    musicFile = path.join(basePath, "music", "StarsBeyondEx.mp3");
+  }
 
   const deleteVoiceFile = async () => {
     try {
@@ -118,14 +134,14 @@ const addBGMAgent: AgentFunction<
             console.log("File has been created successfully");
             resolve(0);
           })
-          .save(outputFile);
+          .save(outputFilePath);
       });
     });
   } finally {
     await deleteVoiceFile();
   }
 
-  return outputFile;
+  return { outputFile: outputFilePath };
 };
 
 const addBGMAgentInfo: AgentFunctionInfo = {

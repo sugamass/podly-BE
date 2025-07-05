@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "../../",
+    "lib": ["ES2022", "dom"],
+    "types": ["node", "aws-lambda"],
+    "baseUrl": "../../",
+    "paths": {
+      "@podly/shared": ["shared/src/index.ts"],
+      "@podly/shared/*": ["shared/src/*"]
+    },
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*",
+    "../../shared/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+} 

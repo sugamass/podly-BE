@@ -19,9 +19,24 @@ const combineFilesAgent: AgentFunction<
 > = async ({ namedInputs }) => {
   const { script, outputFilePath } = namedInputs;
 
-  const silentPath = path.resolve("music/silent300.mp3");
-  const silentLastPath = path.resolve("music/silent800.mp3");
-  const scratchpadDir = path.resolve("scratchpad");
+  // 環境に応じたパス設定
+  const isLambda =
+    process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
+
+  let basePath: string;
+  if (isLambda) {
+    basePath = "/tmp";
+  } else {
+    // ローカル開発環境: 実行時のカレントディレクトリから見て ../../../ がpodly-BEルート
+    basePath = path.resolve(process.cwd(), "../../../");
+  }
+
+  const musicDir = path.join(basePath, "music");
+  const separatedAudioDir = path.join(basePath, "tmp_separated_audio");
+
+  const silentPath = path.join(musicDir, "silent300.mp3");
+  const silentLastPath = path.join(musicDir, "silent800.mp3");
+  const scratchpadDir = path.join(basePath, "scratchpad");
   const scratchpadFilePaths: string[] = [];
   const mp3filenames: string[] = script.script.map(
     (element: any) => `${element.filename}.mp3`
@@ -29,9 +44,7 @@ const combineFilesAgent: AgentFunction<
 
   const command = ffmpeg();
   script.script.forEach((element: any, index: number) => {
-    const filePath = path.resolve(
-      "tmp_separated_audio/" + element.filename + ".mp3"
-    );
+    const filePath = path.join(separatedAudioDir, element.filename + ".mp3");
     scratchpadFilePaths.push(filePath);
     const isLast = index === script.script.length - 2;
     command.input(filePath);

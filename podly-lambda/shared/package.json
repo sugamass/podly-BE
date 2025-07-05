@@ -14,6 +14,9 @@
     "@graphai/agent_utils": "^2.0.0",
     "@graphai/agents": "^2.0.5",
     "@graphai/llm_utils": "^2.0.0",
+    "@graphai/tts_openai_agent": "^2.0.0",
+    "@graphai/vanilla_node_agents": "^2.0.1",
+    "fluent-ffmpeg": "^2.1.3",
     "graphai": "^2.0.8",
     "openai": "^5.7.0",
     "uuid": "^11.1.0",
@@ -21,6 +24,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",
+    "@types/fluent-ffmpeg": "^2.1.27",
     "@types/node": "^20.19.4",
     "@types/uuid": "^10.0.0",
     "typescript": "^5.3.3"
