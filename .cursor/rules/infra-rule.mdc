@@ -1,0 +1,89 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Podly Lambda Infrastructure Rule
+
+## プロジェクト概要
+- **プロジェクト名**: podly-lambda
+- **現在の構成**: Serverless Framework を使用したAWS Lambda関数
+- **目標**: Terraformを使ってdev環境にデプロイ（2つのLambda関数）
+
+## 現在のServerless Framework構成
+
+### Provider設定
+- **Runtime**: nodejs18.x
+- **Region**: ap-northeast-1
+- **Memory**: 512MB
+- **Timeout**: 30秒
+- **Stage**: dev（デフォルト）
+
+### Lambda関数一覧（デプロイ対象）
+1. **createScript**
+   - Handler: `src/handlers/script.createScript`
+   - HTTP API: POST `/script/create`
+   - 目的: スクリプト生成
+
+2. **previewAudio**
+   - Handler: `src/handlers/audio.previewAudio`
+   - HTTP API: POST `/audio/preview`
+   - 目的: 音声プレビュー
+   - 特別な要件: FFmpeg/FFprobeが必要
+
+## Terraformデプロイ要件
+
+### 環境変数
+以下の環境変数が必要：
+- `NODE_ENV`: ステージ名（dev）
+- `STAGE`: ステージ名（dev）
+- `OPENAI_API_KEY`: OpenAI APIキー
+- `TAVILY_API_KEY`: Tavily APIキー
+- `FFMPEG_PATH`: FFmpegバイナリパス
+- `FFPROBE_PATH`: FFprobeバイナリパス
+
+### 依存関係
+- **Lambda Layer**: FFmpeg/FFprobeバイナリが必要
+  - 本番環境: `/opt/bin/ffmpeg`, `/opt/bin/ffprobe`
+  - 開発環境: 環境変数から取得
+
+### API Gateway設定
+- **Type**: HTTP API
+- **CORS**: 有効
+- **Endpoints**:
+  - POST `/script/create`
+  - POST `/audio/preview`
+
+### デプロイメント要件
+- **Build**: Webpack使用
+- **TypeScript**: TypeScript 5.3.3
+- **Node.js**: 18.x runtime
+- **Package Manager**: npm
+
+### 必要なAWSリソース
+1. **Lambda Functions** (2つ)
+2. **API Gateway** (HTTP API)
+3. **Lambda Layer** (FFmpeg/FFprobe用)
+4. **IAM Roles** (Lambda実行用)
+5. **CloudWatch Logs** (ログ出力用)
+
+### セキュリティ考慮事項
+- API Keyの適切な管理（AWS Secrets Manager推奨）
+- Lambda実行ロールの最小権限の原則
+- CORS設定の確認
+
+### 監視・ログ
+- CloudWatch Logsでのログ出力
+- Lambda関数のメトリクス監視
+- API Gatewayのアクセスログ
+
+### 除外された関数
+以下の関数は今回のデプロイ対象外：
+- `streamAudio` - 音声ファイル配信（ローカル開発用）
+- `streamSeparatedAudio` - 分離音声ファイル配信
+
+## 次のステップ
+1. Terraformモジュールの作成
+2. Lambda Layer (FFmpeg) の準備
+3. 環境変数の設定
+4. デプロイメントパイプラインの構築

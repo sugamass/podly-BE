@@ -1,0 +1,124 @@
+openapi: 3.0.0
+x-stoplight:
+  id: l1kt8o2bsj9n0
+info:
+  title: audio
+  version: '1.0'
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /audio/preview:
+    post:
+      summary: Your POST endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            header-0:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudioPreviewResponse'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      operationId: post-audio-test
+      x-stoplight:
+        id: xwjqqpoys02ra
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AudioPreviewRequest'
+    parameters: []
+components:
+  schemas:
+    ScriptData:
+      title: ScriptData
+      x-stoplight:
+        id: 8dylepeja1z2f
+      type: object
+      required:
+        - speaker
+        - text
+        - caption
+      properties:
+        speaker:
+          type: string
+          x-stoplight:
+            id: 9xkbn41no2fms
+        text:
+          type: string
+          x-stoplight:
+            id: 7kh8j0vw53ak8
+        caption:
+          type: string
+          x-stoplight:
+            id: 53td5y44eaqd4
+    AudioPreviewRequest:
+      title: AudioPreviewRequest
+      x-stoplight:
+        id: h3odvb1rxkzll
+      type: object
+      required:
+        - script
+        - tts
+        - voices
+        - speakers
+      properties:
+        script:
+          type: array
+          x-stoplight:
+            id: 8ks4xx5zr5780
+          items:
+            $ref: '#/components/schemas/ScriptData'
+        tts:
+          type: string
+          x-stoplight:
+            id: or9sza8nzzi02
+        voices:
+          type: array
+          x-stoplight:
+            id: 0xfea8mmhzryw
+          items:
+            x-stoplight:
+              id: x9bshq64fyg7b
+            type: string
+        speakers:
+          type: array
+          x-stoplight:
+            id: e2caxotnjaf0f
+          items:
+            x-stoplight:
+              id: 0l8sacju92r1z
+            type: string
+        scriptId:
+          type: string
+          x-stoplight:
+            id: sd1tr0mm5ft2d
+    AudioPreviewResponse:
+      title: AudioPreviewResponse
+      x-stoplight:
+        id: b92y9uylt1nmu
+      type: object
+      properties:
+        audioUrl:
+          type: string
+          x-stoplight:
+            id: 6271qkeulhowr
+        separatedAudioUrls:
+          type: array
+          x-stoplight:
+            id: etlbdxfdarkdp
+          items:
+            x-stoplight:
+              id: z9y63cy1o1zdn
+            type: string
+        scriptId:
+          type: string
+          x-stoplight:
+            id: t00yeucyi0p7q

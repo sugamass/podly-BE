@@ -1,0 +1,143 @@
+openapi: 3.0.0
+x-stoplight:
+  id: 9ejrzt2anufmd
+info:
+  title: script
+  version: '1.0'
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /script/create:
+    post:
+      summary: Your POST endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCreateScriptResponse'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+          headers: {}
+          content: {}
+      operationId: post-script-create
+      x-stoplight:
+        id: jrbz8x8cr0oif
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateScriptRequest'
+components:
+  schemas:
+    ScriptData:
+      title: ScriptData
+      x-stoplight:
+        id: 7g1e8fh7wudsr
+      type: object
+      properties:
+        speaker:
+          type: string
+          x-stoplight:
+            id: 25ru9jujiy7qh
+        text:
+          type: string
+          x-stoplight:
+            id: natubwsj9tkwj
+        caption:
+          type: string
+          x-stoplight:
+            id: e0clil0ahkzyj
+    PostCreateScriptRequest:
+      title: PostCreateScriptRequest
+      x-stoplight:
+        id: 4qu641xmyuh67
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          x-stoplight:
+            id: nce3f80elonde
+        previousScript:
+          type: array
+          x-stoplight:
+            id: 5ulr0bv6bp5f2
+          items:
+            $ref: '#/components/schemas/PromptScriptData'
+        reference:
+          type: array
+          x-stoplight:
+            id: jthqzlopcol97
+          items:
+            x-stoplight:
+              id: b3bk5pflqznqy
+            type: string
+        isSearch:
+          type: boolean
+          x-stoplight:
+            id: n6s9tpmmbvays
+        wordCount:
+          type: number
+          x-stoplight:
+            id: f4k9ec8i5kz4c
+        situation:
+          x-stoplight:
+            id: tzb3vwoa10x90
+          enum:
+            - school
+            - expert
+            - interview
+            - friends
+            - radio_personality
+    PromptScriptData:
+      title: PromptScriptData
+      x-stoplight:
+        id: xc0289y8mgucv
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          x-stoplight:
+            id: to9b9622g3ot3
+        script:
+          type: array
+          x-stoplight:
+            id: t94tgqt01qwaq
+          items:
+            $ref: '#/components/schemas/ScriptData'
+        reference:
+          type: array
+          x-stoplight:
+            id: c5mxgaf3od9h2
+          items:
+            x-stoplight:
+              id: qesuk2rjlquwk
+            type: string
+        situation:
+          type: string
+          x-stoplight:
+            id: vo2x9lnp0h24q
+    PostCreateScriptResponse:
+      title: PostCreateScriptResponse
+      x-stoplight:
+        id: 6e8ptfsrebjbt
+      type: object
+      required:
+        - newScript
+      properties:
+        newScript:
+          $ref: '#/components/schemas/PromptScriptData'
+        previousScript:
+          type: array
+          x-stoplight:
+            id: zdg920wbudhh0
+          items:
+            $ref: '#/components/schemas/PromptScriptData'
