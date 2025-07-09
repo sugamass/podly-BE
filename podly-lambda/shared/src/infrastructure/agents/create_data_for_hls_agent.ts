@@ -2,14 +2,15 @@ import { AgentFunction, AgentFunctionInfo } from "graphai";
 import ffmpeg from "fluent-ffmpeg";
 import * as path from "path";
 import fs from "fs";
+import { S3Uploader, getS3ConfigFromEnv } from "../../utils/s3Upload";
 
 const createDataForHlsAgent: AgentFunction = async ({
   params,
   namedInputs,
 }) => {
-  const { outputDir, ifDeleteInput } = params;
+  const { ifDeleteInput, outputDir } = params;
   const { inputFilePath, outputBaseName } = namedInputs;
-  console.log("inputFilePath", inputFilePath);
+
   const hlsOptions = {
     segmentTime: 10,
     listSize: 0,
@@ -36,6 +37,7 @@ const createDataForHlsAgent: AgentFunction = async ({
   };
 
   try {
+    // HLS生成処理
     await new Promise((resolve, reject) => {
       ffmpeg(inputFilePath)
         .outputOptions([
@@ -56,22 +58,60 @@ const createDataForHlsAgent: AgentFunction = async ({
           console.log("progress:", progress);
         })
         .on("end", () => {
-          console.log("end");
+          console.log("HLS generation completed");
           resolve({ fileName: hlsOptions.playlistName });
         })
         .on("error", (err) => {
-          console.error("error:", err);
+          console.error("FFmpeg error:", err);
           reject(err);
         })
         .run();
     });
+
+    // // S3アップロード処理
+    // if (useS3) {
+    //   try {
+    //     const s3Config = getS3ConfigFromEnv();
+    //     const s3Uploader = new S3Uploader(s3Config);
+
+    //     // HLSファイル（セグメント化された音声）のS3キーのプレフィックス
+    //     const hlsS3Prefix = `tmp/audio_fulll/${outputBaseName}`;
+
+    //     console.log(`Uploading HLS files to S3: ${hlsS3Prefix}`);
+    //     const uploadResult = await s3Uploader.uploadHlsFiles(
+    //       hlsOptions.outputDir,
+    //       outputBaseName,
+    //       hlsS3Prefix
+    //     );
+
+    //     console.log("S3 upload completed:", uploadResult.playlistUrl);
+
+    //     // ローカルファイルを削除
+    //     const localFiles = await fs.promises.readdir(hlsOptions.outputDir);
+    //     const hlsFiles = localFiles
+    //       .filter((file) => file.startsWith(outputBaseName))
+    //       .map((file) => path.join(hlsOptions.outputDir, file));
+
+    //     await s3Uploader.cleanupLocalFiles(hlsFiles);
+
+    //     return {
+    //       fileName: hlsOptions.playlistName,
+    //       s3Url: uploadResult.playlistUrl,
+    //       segmentUrls: uploadResult.segmentUrls,
+    //     };
+    //   } catch (s3Error) {
+    //     console.error("S3 upload failed:", s3Error);
+    //     // S3アップロードに失敗した場合はローカルファイルを返す
+    //     return { fileName: hlsOptions.playlistName };
+    //   }
+    // }
+
+    return { outputFilePath: outputDir + "/" + hlsOptions.playlistName };
   } finally {
     if (ifDeleteInput) {
       await deleteInputFile();
     }
   }
-
-  return { fileName: hlsOptions.playlistName };
 };
 
 const sampleInput = {

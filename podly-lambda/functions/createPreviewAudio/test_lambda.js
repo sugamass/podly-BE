@@ -104,14 +104,6 @@ const testContext = {
 
 // テスト実行
 async function runTest() {
-  console.log("🧪 Testing createPreviewAudio function...");
-  console.log("📋 Test Data Overview:");
-  console.log("- Script segments:", 6);
-  console.log("- Speakers:", 3);
-  console.log("- TTS Provider:", "openai");
-  console.log("- Voices:", ["shimmer", "echo", "nova"]);
-  console.log("");
-
   try {
     const result = await createPreviewAudio(testEvent, testContext);
     console.log("✅ Test completed successfully!");
@@ -125,32 +117,6 @@ async function runTest() {
   }
 }
 
-// 短いテスト実行
-async function runShortTest() {
-  console.log("🧪 Testing createPreviewAudio function (Short Version)...");
-  console.log("📋 Test Data Overview:");
-  console.log("- Script segments:", 2);
-  console.log("- Speakers:", 2);
-  console.log("- TTS Provider:", "openai");
-  console.log("- Voices:", ["shimmer", "echo"]);
-  console.log("");
-
-  try {
-    const result = await createPreviewAudio(testEventShort, testContext);
-    console.log("✅ Short test completed successfully!");
-    console.log("📤 Result:", JSON.stringify(result, null, 2));
-  } catch (error) {
-    console.error("❌ Short test failed:", error);
-    console.error("Error details:", error.message);
-    if (error.stack) {
-      console.error("Stack trace:", error.stack);
-    }
-  }
-}
-
 // メイン実行
-if (process.argv.includes("--short")) {
-  runShortTest();
-} else {
-  runTest();
-}
+
+runTest();

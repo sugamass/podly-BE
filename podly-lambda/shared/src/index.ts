@@ -30,6 +30,7 @@ export type PostCreateScriptResponse =
 export * from "./utils/response";
 export * from "./utils/converter/script";
 export * from "./utils/converter/audio";
+export * from "./utils/s3Upload";
 
 // アプリケーション層のエクスポート
 export * from "./application/usecases/ScriptUsecases";

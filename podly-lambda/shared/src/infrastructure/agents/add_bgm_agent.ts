@@ -3,6 +3,7 @@ import ffmpeg from "fluent-ffmpeg";
 import path from "path";
 import { PodcastScript } from "./type";
 import fs from "fs";
+import { S3Uploader, getS3ConfigFromEnv } from "../../utils/s3Upload";
 
 // 環境に応じたffmpegパスの設定
 if (process.env.FFMPEG_PATH) {
@@ -13,37 +14,46 @@ if (process.env.FFPROBE_PATH) {
 }
 
 const addBGMAgent: AgentFunction<
-  { musicFileName: string },
-  { outputFile: string },
-  { voiceFile: string; outputFilePath: string; script: PodcastScript }
+  { musicFilePath: string },
+  { outputFilePath: string },
+  { voiceFilePath: string; outputFilePath: string; script: PodcastScript }
 > = async ({ namedInputs, params }) => {
-  const { voiceFile, outputFilePath, script } = namedInputs;
+  const { voiceFilePath, outputFilePath, script } = namedInputs;
 
-  // 環境に応じたパス設定
   const isLambda =
     process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
 
-  let musicFile: string;
-  if (params?.musicFileName) {
-    musicFile = params.musicFileName;
-  } else {
-    // デフォルトのBGMファイルパス
-    let basePath: string;
-    if (isLambda) {
-      // TODO s3から取得する
-      basePath = "/tmp";
-    } else {
-      basePath = path.resolve(process.cwd(), "../../../");
+  let musicFilePath: string;
+  if (isLambda) {
+    try {
+      const s3Config = getS3ConfigFromEnv();
+      const s3Uploader = new S3Uploader(s3Config);
+      const musicDir = path.resolve(process.cwd(), "../../../music");
+
+      // S3からBGMファイルをダウンロード
+      musicFilePath = await s3Uploader.downloadMusicFile(
+        "StarsBeyondEx.mp3",
+        musicDir
+      );
+    } catch (error) {
+      console.error("Failed to download BGM file from S3:", error);
+      throw error;
     }
-    musicFile = path.join(basePath, "music", "StarsBeyondEx.mp3");
+  } else {
+    // ローカル環境ではローカルディレクトリから取得
+    musicFilePath = path.join(
+      path.join(process.cwd(), "../../../"),
+      "music",
+      "StarsBeyondEx.mp3"
+    );
   }
 
   const deleteVoiceFile = async () => {
     try {
-      await fs.promises.unlink(voiceFile);
-      console.log(`Deleted voice file: ${voiceFile}`);
+      await fs.promises.unlink(voiceFilePath);
+      console.log(`Deleted voice file: ${voiceFilePath}`);
     } catch (err) {
-      console.error(`Failed to delete voice file: ${voiceFile}`, err);
+      console.error(`Failed to delete voice file: ${voiceFilePath}`, err);
     }
   };
 
@@ -95,7 +105,7 @@ const addBGMAgent: AgentFunction<
   // return outputFile;
   try {
     await new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(voiceFile, (err, metadata) => {
+      ffmpeg.ffprobe(voiceFilePath, (err, metadata) => {
         if (err) {
           console.error("Error getting metadata: " + err.message);
           return reject(err);
@@ -109,8 +119,8 @@ const addBGMAgent: AgentFunction<
 
         const command = ffmpeg();
         command
-          .input(musicFile)
-          .input(voiceFile)
+          .input(musicFilePath)
+          .input(voiceFilePath)
           .complexFilter([
             // 音声に delay をかけ、音量を上げる
             `[1:a]adelay=${padding}|${padding},volume=4[a1]`,
@@ -141,7 +151,7 @@ const addBGMAgent: AgentFunction<
     await deleteVoiceFile();
   }
 
-  return { outputFile: outputFilePath };
+  return { outputFilePath: outputFilePath };
 };
 
 const addBGMAgentInfo: AgentFunctionInfo = {

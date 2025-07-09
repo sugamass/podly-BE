@@ -45,6 +45,4 @@ pids/
 *.seed
 *.pid.lock 
 
-tmp_output_storage/
-tmp_separated_audio/
-scratchpad/
+tmp/

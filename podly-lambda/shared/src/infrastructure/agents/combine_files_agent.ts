@@ -3,6 +3,7 @@ import ffmpeg from "fluent-ffmpeg";
 import path from "path";
 import fs from "fs";
 import { PodcastScript } from "./type";
+import { S3Uploader, getS3ConfigFromEnv } from "../../utils/s3Upload";
 
 // 環境に応じたffmpegパスの設定
 if (process.env.FFMPEG_PATH) {
@@ -15,28 +16,58 @@ if (process.env.FFPROBE_PATH) {
 const combineFilesAgent: AgentFunction<
   null, // params
   Record<string, any>, // output
-  { script: PodcastScript; outputFilePath: string } // input
+  {
+    script: PodcastScript;
+    inputDir: string;
+    outputFilePath: string;
+    isCleanup: boolean;
+  } // input
 > = async ({ namedInputs }) => {
-  const { script, outputFilePath } = namedInputs;
+  const { script, inputDir, outputFilePath, isCleanup = true } = namedInputs;
 
   // 環境に応じたパス設定
   const isLambda =
     process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
 
-  let basePath: string;
+  let musicDir: string;
   if (isLambda) {
-    basePath = "/tmp";
+    musicDir = "/music/silent";
   } else {
     // ローカル開発環境: 実行時のカレントディレクトリから見て ../../../ がpodly-BEルート
-    basePath = path.resolve(process.cwd(), "../../../");
+    musicDir = path.resolve(process.cwd(), "../../../music");
   }
 
-  const musicDir = path.join(basePath, "music");
-  const separatedAudioDir = path.join(basePath, "tmp_separated_audio");
+  let silentPath: string;
+  let silentLastPath: string;
 
-  const silentPath = path.join(musicDir, "silent300.mp3");
-  const silentLastPath = path.join(musicDir, "silent800.mp3");
-  const scratchpadDir = path.join(basePath, "scratchpad");
+  if (isLambda) {
+    // Lambda環境では、S3からmusicファイルを取得
+    try {
+      const s3Config = getS3ConfigFromEnv();
+      const s3Uploader = new S3Uploader(s3Config);
+
+      // musicディレクトリを作成
+      await fs.promises.mkdir(musicDir, { recursive: true });
+
+      // S3からmusicファイルをダウンロード
+      silentPath = await s3Uploader.downloadMusicFile(
+        "silent300.mp3",
+        musicDir
+      );
+      silentLastPath = await s3Uploader.downloadMusicFile(
+        "silent800.mp3",
+        musicDir
+      );
+    } catch (error) {
+      console.error("Failed to download music files from S3:", error);
+      throw error;
+    }
+  } else {
+    // ローカル環境では既存のパスを使用
+    silentPath = path.join(musicDir, "silent300.mp3");
+    silentLastPath = path.join(musicDir, "silent800.mp3");
+  }
+
   const scratchpadFilePaths: string[] = [];
   const mp3filenames: string[] = script.script.map(
     (element: any) => `${element.filename}.mp3`
@@ -44,7 +75,7 @@ const combineFilesAgent: AgentFunction<
 
   const command = ffmpeg();
   script.script.forEach((element: any, index: number) => {
-    const filePath = path.join(separatedAudioDir, element.filename + ".mp3");
+    const filePath = path.join(inputDir, element.filename + ".mp3");
     scratchpadFilePaths.push(filePath);
     const isLast = index === script.script.length - 2;
     command.input(filePath);
@@ -75,24 +106,29 @@ const combineFilesAgent: AgentFunction<
   } catch (error) {
     console.error("An error occurred:", error);
   } finally {
-    // scratchpad 内のファイルを削除
-    // try {
-    //   await Promise.all(
-    //     scratchpadFilePaths.map(async (file) => {
-    //       try {
-    //         await fs.promises.unlink(file);
-    //         console.log(`Deleted: ${file}`);
-    //       } catch (unlinkError) {
-    //         console.error(`Error deleting file ${file}:`, unlinkError);
-    //       }
-    //     })
-    //   );
-    // } catch (cleanupError) {
-    //   console.error("Error while cleaning up scratchpad files:", cleanupError);
-    // }
+    if (isCleanup) {
+      // scratchpad 内のファイルを削除
+      try {
+        await Promise.all(
+          scratchpadFilePaths.map(async (file) => {
+            try {
+              await fs.promises.unlink(file);
+              console.log(`Deleted: ${file}`);
+            } catch (unlinkError) {
+              console.error(`Error deleting file ${file}:`, unlinkError);
+            }
+          })
+        );
+      } catch (cleanupError) {
+        console.error(
+          "Error while cleaning up scratchpad files:",
+          cleanupError
+        );
+      }
+    }
   }
 
-  return { outputFile: outputFilePath, mp3Urls: mp3filenames };
+  return { outputFilePath, mp3Urls: mp3filenames };
 };
 
 const combineFilesAgentInfo: AgentFunctionInfo = {
