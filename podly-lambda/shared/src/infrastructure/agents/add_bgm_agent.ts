@@ -14,11 +14,13 @@ if (process.env.FFPROBE_PATH) {
 }
 
 const addBGMAgent: AgentFunction<
-  { musicFilePath: string },
+  { musicDir: string },
   { outputFilePath: string },
   { voiceFilePath: string; outputFilePath: string; script: PodcastScript }
 > = async ({ namedInputs, params }) => {
   const { voiceFilePath, outputFilePath, script } = namedInputs;
+
+  const { musicDir } = params;
 
   const isLambda =
     process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
@@ -28,7 +30,6 @@ const addBGMAgent: AgentFunction<
     try {
       const s3Config = getS3ConfigFromEnv();
       const s3Uploader = new S3Uploader(s3Config);
-      const musicDir = path.resolve(process.cwd(), "../../../music");
 
       // S3からBGMファイルをダウンロード
       musicFilePath = await s3Uploader.downloadMusicFile(

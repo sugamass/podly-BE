@@ -32,4 +32,26 @@ output "iam_roles" {
   value = {
     lambda_execution_role = module.iam.lambda_execution_role_arn
   }
+}
+
+output "s3_buckets" {
+  description = "S3 bucket information"
+  value = {
+    audio_files = {
+      name = aws_s3_bucket.audio_files.bucket
+      arn  = aws_s3_bucket.audio_files.arn
+    }
+    music_files = {
+      name = aws_s3_bucket.music_files.bucket
+      arn  = aws_s3_bucket.music_files.arn
+    }
+  }
+}
+
+output "s3_bucket_names" {
+  description = "S3 bucket names (for easy reference)"
+  value = {
+    audio_files = aws_s3_bucket.audio_files.bucket
+    music_files = aws_s3_bucket.music_files.bucket
+  }
 } 

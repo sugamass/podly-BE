@@ -232,6 +232,7 @@ export class S3Uploader {
 
 /**
  * 環境変数からS3設定を取得
+ * Lambda環境でIAMロールベースの認証を使用
  */
 export function getS3ConfigFromEnv(): S3UploadConfig {
   const bucketName = process.env.S3_BUCKET_NAME;
@@ -242,10 +243,13 @@ export function getS3ConfigFromEnv(): S3UploadConfig {
     throw new Error("S3_BUCKET_NAME environment variable is required");
   }
 
+  console.log(`S3 Config - Bucket: ${bucketName}, Region: ${region}`);
+
   return {
     bucketName,
     region,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    // Lambda環境ではIAMロールを使用するため認証情報は undefined
+    accessKeyId: undefined,
+    secretAccessKey: undefined,
   };
 }

@@ -115,12 +115,15 @@ export class AudioPreviewUseCase {
     // ローカル用HLSファイル保存フォルダ
     const fullHlsDir = path.join(basePath, request.scriptId, "tmp_full_hls");
 
+    const musicDir = path.join(basePath, "music");
+
     // Lambda環境では必要なディレクトリを作成
 
     await fsPromise.mkdir(separatedMp3Dir, { recursive: true });
     await fsPromise.mkdir(separatedHlsDir, { recursive: true });
     await fsPromise.mkdir(fullMp3Dir, { recursive: true });
     await fsPromise.mkdir(fullHlsDir, { recursive: true });
+    await fsPromise.mkdir(musicDir, { recursive: true });
 
     // TODO モデルを変更できるようにする
     const openaiTtsModel = "tts-1"; // 標準モデル
@@ -247,6 +250,9 @@ export class AudioPreviewUseCase {
               "${:script.filename}_bgm.mp3"
             ),
             script: ":script",
+          },
+          params: {
+            musicDir: musicDir,
           },
           isResult: true,
         },
