@@ -3,7 +3,7 @@ import ffmpeg from "fluent-ffmpeg";
 import path from "path";
 import fs from "fs";
 import { PodcastScript } from "./type";
-import { S3Uploader, getS3ConfigFromEnv } from "../../utils/s3Upload";
+import { S3Uploader } from "../../utils/s3Upload";
 
 // 環境に応じたffmpegパスの設定
 if (process.env.FFMPEG_PATH) {
@@ -14,7 +14,7 @@ if (process.env.FFPROBE_PATH) {
 }
 
 const combineFilesAgent: AgentFunction<
-  null, // params
+  { musicDir: string }, // params
   Record<string, any>, // output
   {
     script: PodcastScript;
@@ -22,20 +22,13 @@ const combineFilesAgent: AgentFunction<
     outputFilePath: string;
     isCleanup: boolean;
   } // input
-> = async ({ namedInputs }) => {
+> = async ({ namedInputs, params }) => {
   const { script, inputDir, outputFilePath, isCleanup = true } = namedInputs;
+  const { musicDir } = params;
 
   // 環境に応じたパス設定
   const isLambda =
     process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
-
-  let musicDir: string;
-  if (isLambda) {
-    musicDir = "/music/silent";
-  } else {
-    // ローカル開発環境: 実行時のカレントディレクトリから見て ../../../ がpodly-BEルート
-    musicDir = path.resolve(process.cwd(), "../../../music");
-  }
 
   let silentPath: string;
   let silentLastPath: string;
@@ -43,18 +36,15 @@ const combineFilesAgent: AgentFunction<
   if (isLambda) {
     // Lambda環境では、S3からmusicファイルを取得
     try {
-      const s3Config = getS3ConfigFromEnv();
-      const s3Uploader = new S3Uploader(s3Config);
-
       // musicディレクトリを作成
       await fs.promises.mkdir(musicDir, { recursive: true });
 
-      // S3からmusicファイルをダウンロード
-      silentPath = await s3Uploader.downloadMusicFile(
+      // S3から音楽ファイルをダウンロード（音楽ファイル専用バケットを使用）
+      silentPath = await S3Uploader.downloadMusicFileFromMusicBucket(
         "silent300.mp3",
         musicDir
       );
-      silentLastPath = await s3Uploader.downloadMusicFile(
+      silentLastPath = await S3Uploader.downloadMusicFileFromMusicBucket(
         "silent800.mp3",
         musicDir
       );

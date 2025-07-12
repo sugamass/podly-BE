@@ -3,7 +3,7 @@ import ffmpeg from "fluent-ffmpeg";
 import path from "path";
 import { PodcastScript } from "./type";
 import fs from "fs";
-import { S3Uploader, getS3ConfigFromEnv } from "../../utils/s3Upload";
+import { S3Uploader } from "../../utils/s3Upload";
 
 // 環境に応じたffmpegパスの設定
 if (process.env.FFMPEG_PATH) {
@@ -28,11 +28,8 @@ const addBGMAgent: AgentFunction<
   let musicFilePath: string;
   if (isLambda) {
     try {
-      const s3Config = getS3ConfigFromEnv();
-      const s3Uploader = new S3Uploader(s3Config);
-
-      // S3からBGMファイルをダウンロード
-      musicFilePath = await s3Uploader.downloadMusicFile(
+      // S3から音楽ファイルをダウンロード（音楽ファイル専用バケットを使用）
+      musicFilePath = await S3Uploader.downloadMusicFileFromMusicBucket(
         "StarsBeyondEx.mp3",
         musicDir
       );
@@ -148,6 +145,9 @@ const addBGMAgent: AgentFunction<
           .save(outputFilePath);
       });
     });
+  } catch (error) {
+    console.error("Failed to add BGM:", error);
+    throw error;
   } finally {
     await deleteVoiceFile();
   }

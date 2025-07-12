@@ -224,10 +224,63 @@ export class S3Uploader {
       // ファイルが存在しない場合はダウンロード
     }
 
-    const s3Key = `music/${musicFileName}`;
+    // 音楽ファイル専用バケットでは、プレフィックスなしで直接ファイル名を使用
+    const s3Key = musicFileName;
     await this.downloadFile(s3Key, localFilePath);
     return localFilePath;
   }
+
+  /**
+   * 音楽ファイル専用のS3からダウンロード
+   */
+  static async downloadMusicFileFromMusicBucket(
+    musicFileName: string,
+    localDir: string
+  ): Promise<string> {
+    const localFilePath = path.join(localDir, musicFileName);
+
+    // ファイルが既に存在する場合はダウンロードをスキップ
+    try {
+      await fs.promises.access(localFilePath);
+      console.log(`Music file already exists: ${localFilePath}`);
+      return localFilePath;
+    } catch {
+      // ファイルが存在しない場合はダウンロード
+    }
+
+    // 音楽ファイル専用のS3設定を取得
+    const musicS3Config = getMusicS3ConfigFromEnv();
+    const musicS3Uploader = new S3Uploader(musicS3Config);
+
+    // 音楽ファイル専用バケットでは、プレフィックスなしで直接ファイル名を使用
+    const s3Key = musicFileName;
+    await musicS3Uploader.downloadFile(s3Key, localFilePath);
+    return localFilePath;
+  }
+}
+
+/**
+ * 音楽ファイル専用のS3設定を取得
+ * Lambda環境でIAMロールベースの認証を使用
+ */
+export function getMusicS3ConfigFromEnv(): S3UploadConfig {
+  const bucketName = process.env.S3_MUSIC_BUCKET;
+  const region =
+    process.env.S3_REGION || process.env.AWS_DEFAULT_REGION || "ap-northeast-1";
+
+  if (!bucketName) {
+    throw new Error("S3_MUSIC_BUCKET environment variable is required");
+  }
+
+  console.log(`Music S3 Config - Bucket: ${bucketName}, Region: ${region}`);
+
+  return {
+    bucketName,
+    region,
+    // Lambda環境ではIAMロールを使用するため認証情報は undefined
+    accessKeyId: undefined,
+    secretAccessKey: undefined,
+  };
 }
 
 /**

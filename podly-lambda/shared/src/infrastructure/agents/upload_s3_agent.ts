@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 const uploadS3Agent: AgentFunction<
-  null, // params
+  { isLambda: boolean }, // params
   {
     results: Array<{ key: string; url: string }>;
     success: boolean;
@@ -16,8 +16,22 @@ const uploadS3Agent: AgentFunction<
     waitFor: any;
     cleanup?: boolean;
   } // input
-> = async ({ namedInputs }) => {
+> = async ({ namedInputs, params }) => {
   const { directoryPath, s3Prefix, cleanup = true } = namedInputs;
+  const { isLambda } = params;
+
+  if (!isLambda) {
+    return {
+      results: [
+        {
+          key: "local-test",
+          url: "local-test",
+        },
+      ],
+      success: true,
+      uploadedCount: 0,
+    };
+  }
 
   try {
     // S3設定を環境変数から取得

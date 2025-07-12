@@ -224,16 +224,22 @@ export class AudioPreviewUseCase {
         },
         uploadSeparatedAudio: {
           agent: "uploadS3Agent",
+          params: {
+            isLambda: isLambda,
+          },
           inputs: {
             directoryPath: separatedHlsDir,
             s3Prefix: "tmp_separated_hls",
             // 待機用
             waitFor: ":map",
           },
-          if: ":isLambda",
+          isResult: true,
         },
         combineFiles: {
           agent: "combineFilesAgent",
+          params: {
+            musicDir: musicDir,
+          },
           inputs: {
             inputDir: separatedMp3Dir,
             map: ":map",
@@ -309,12 +315,14 @@ export class AudioPreviewUseCase {
         },
         uploadFullAudio: {
           agent: "uploadS3Agent",
+          params: {
+            isLambda: isLambda,
+          },
           inputs: {
             directoryPath: fullHlsDir,
             s3Prefix: "tmp_full_hls",
             waitFor: ":waitForOutput",
           },
-          if: ":isLambda",
         },
         // TODO：署名付きURLを生成するエージェントを作成する
         output: {
@@ -388,6 +396,8 @@ export class AudioPreviewUseCase {
     podcastGraph.injectValue("isLambda", isLambda);
 
     const graphResult = await podcastGraph.run();
+
+    //
     const errors = podcastGraph.errors();
     console.log("errorsssssss:", errors);
     console.log("graphResult:", graphResult);
