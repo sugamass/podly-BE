@@ -61,7 +61,7 @@ resource "aws_lambda_function" "create_preview_audio" {
   handler         = "index.createPreviewAudio"
   runtime         = "nodejs18.x"
   timeout         = 900  # 15 minutes for audio processing
-  memory_size     = 1024
+  memory_size     = 2048  # Increased from 1024MB to 2048MB for audio processing
 
   layers = [aws_lambda_layer_version.ffmpeg_layer.arn]
 

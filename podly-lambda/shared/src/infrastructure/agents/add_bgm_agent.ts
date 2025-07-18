@@ -46,15 +46,6 @@ const addBGMAgent: AgentFunction<
     );
   }
 
-  const deleteVoiceFile = async () => {
-    try {
-      await fs.promises.unlink(voiceFilePath);
-      console.log(`Deleted voice file: ${voiceFilePath}`);
-    } catch (err) {
-      console.error(`Failed to delete voice file: ${voiceFilePath}`, err);
-    }
-  };
-
   // const promise = new Promise((resolve, reject) => {
   //   ffmpeg.ffprobe(voiceFile, (err, metadata) => {
   //     if (err) {
@@ -148,8 +139,6 @@ const addBGMAgent: AgentFunction<
   } catch (error) {
     console.error("Failed to add BGM:", error);
     throw error;
-  } finally {
-    await deleteVoiceFile();
   }
 
   return { outputFilePath: outputFilePath };

@@ -14,10 +14,9 @@ const uploadS3Agent: AgentFunction<
     directoryPath: string;
     s3Prefix: string;
     waitFor: any;
-    cleanup?: boolean;
   } // input
 > = async ({ namedInputs, params }) => {
-  const { directoryPath, s3Prefix, cleanup = true } = namedInputs;
+  const { directoryPath, s3Prefix } = namedInputs;
   const { isLambda } = params;
 
   if (!isLambda) {
@@ -54,15 +53,13 @@ const uploadS3Agent: AgentFunction<
       `Successfully uploaded ${uploadResults.length} files from directory`
     );
 
-    // オプション: アップロード後のローカルファイル削除
-    if (cleanup) {
-      const files = await fs.promises.readdir(directoryPath);
-      const localFiles = files.map((file) => path.join(directoryPath, file));
-      await s3Uploader.cleanupLocalFiles(localFiles);
-    }
+    // .m3u8ファイルのみを出力結果としてフィルタリング
+    const m3u8Results = uploadResults.filter((result) =>
+      result.key.endsWith(".m3u8")
+    );
 
     return {
-      results: uploadResults,
+      results: m3u8Results,
       success: true,
       uploadedCount: uploadResults.length,
     };
@@ -90,10 +87,6 @@ const uploadS3AgentInfo: AgentFunctionInfo = {
             key: "hls/episode-001/playlist.m3u8",
             url: "https://bucket.s3.amazonaws.com/hls/episode-001/playlist.m3u8",
           },
-          {
-            key: "hls/episode-001/segment_000.ts",
-            url: "https://bucket.s3.amazonaws.com/hls/episode-001/segment_000.ts",
-          },
         ],
         success: true,
         uploadedCount: 2,
@@ -101,7 +94,7 @@ const uploadS3AgentInfo: AgentFunctionInfo = {
     },
   ],
   description:
-    "Upload entire directories to S3 storage with optional local file cleanup",
+    "Upload entire directories to S3 storage with optional local file cleanup. Returns only .m3u8 file paths in results.",
   category: ["storage", "s3"],
   author: "podly team",
   repository: "https://github.com/podly/podly-BE",

@@ -81,10 +81,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "music_files_encry
 resource "aws_s3_bucket_public_access_block" "audio_files_pab" {
   bucket = aws_s3_bucket.audio_files.id
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
 }
 
 resource "aws_s3_bucket_public_access_block" "music_files_pab" {
@@ -94,6 +94,27 @@ resource "aws_s3_bucket_public_access_block" "music_files_pab" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+# S3 bucket policy for public read access to audio files
+resource "aws_s3_bucket_policy" "audio_files_policy" {
+  bucket = aws_s3_bucket.audio_files.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = "*"
+        Action = "s3:GetObject"
+        Resource = "${aws_s3_bucket.audio_files.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [
+    aws_s3_bucket_public_access_block.audio_files_pab
+  ]
 }
 
 # IAM resources

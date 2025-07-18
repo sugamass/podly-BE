@@ -20,10 +20,9 @@ const combineFilesAgent: AgentFunction<
     script: PodcastScript;
     inputDir: string;
     outputFilePath: string;
-    isCleanup: boolean;
   } // input
 > = async ({ namedInputs, params }) => {
-  const { script, inputDir, outputFilePath, isCleanup = true } = namedInputs;
+  const { script, inputDir, outputFilePath } = namedInputs;
   const { musicDir } = params;
 
   // 環境に応じたパス設定
@@ -95,27 +94,6 @@ const combineFilesAgent: AgentFunction<
     });
   } catch (error) {
     console.error("An error occurred:", error);
-  } finally {
-    if (isCleanup) {
-      // scratchpad 内のファイルを削除
-      try {
-        await Promise.all(
-          scratchpadFilePaths.map(async (file) => {
-            try {
-              await fs.promises.unlink(file);
-              console.log(`Deleted: ${file}`);
-            } catch (unlinkError) {
-              console.error(`Error deleting file ${file}:`, unlinkError);
-            }
-          })
-        );
-      } catch (cleanupError) {
-        console.error(
-          "Error while cleaning up scratchpad files:",
-          cleanupError
-        );
-      }
-    }
   }
 
   return { outputFilePath, mp3Urls: mp3filenames };
