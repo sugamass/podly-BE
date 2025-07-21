@@ -12,6 +12,7 @@ export interface AudioPreviewUseCaseInput {
   voices: string[];
   speakers: string[];
   scriptId: string;
+  bgmId?: string;
 }
 
 export interface AudioPreviewUseCaseOutput {

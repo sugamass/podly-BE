@@ -25,6 +25,7 @@ interface AudioPreviewRequest {
   voices: string[];
   speakers: string[];
   scriptId?: string;
+  bgmId?: string;
 }
 
 interface AudioPreviewResponse {

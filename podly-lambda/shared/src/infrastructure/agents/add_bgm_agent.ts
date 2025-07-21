@@ -16,21 +16,29 @@ if (process.env.FFPROBE_PATH) {
 const addBGMAgent: AgentFunction<
   { musicDir: string },
   { outputFilePath: string },
-  { voiceFilePath: string; outputFilePath: string; script: PodcastScript }
+  {
+    voiceFilePath: string;
+    outputFilePath: string;
+    script: PodcastScript;
+    bgmId?: string;
+  }
 > = async ({ namedInputs, params }) => {
-  const { voiceFilePath, outputFilePath, script } = namedInputs;
+  const { voiceFilePath, outputFilePath, script, bgmId } = namedInputs;
 
   const { musicDir } = params;
 
   const isLambda =
     process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
 
+  // BGMファイル名を決定（デフォルトは StarsBeyondEx.mp3）
+  const bgmFileName = bgmId ? `${bgmId}.mp3` : "StarsBeyondEx.mp3";
+
   let musicFilePath: string;
   if (isLambda) {
     try {
       // S3から音楽ファイルをダウンロード（音楽ファイル専用バケットを使用）
       musicFilePath = await S3Uploader.downloadMusicFileFromMusicBucket(
-        "StarsBeyondEx.mp3",
+        bgmFileName,
         musicDir
       );
     } catch (error) {
@@ -39,11 +47,7 @@ const addBGMAgent: AgentFunction<
     }
   } else {
     // ローカル環境ではローカルディレクトリから取得
-    musicFilePath = path.join(
-      path.join(process.cwd(), "../../../"),
-      "music",
-      "StarsBeyondEx.mp3"
-    );
+    musicFilePath = path.join(musicDir, bgmFileName);
   }
 
   // const promise = new Promise((resolve, reject) => {

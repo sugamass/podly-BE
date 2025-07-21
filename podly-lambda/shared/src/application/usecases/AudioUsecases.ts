@@ -29,6 +29,7 @@ interface PodcastScript {
   ttsAgent: string;
   padding?: any;
   imageInfo: any[];
+  bgmId?: string;
 }
 
 /**
@@ -139,6 +140,7 @@ export class AudioPreviewUseCase {
         ttsAgent: ttsAgent,
         padding: undefined,
         imageInfo: [],
+        bgmId: request.bgmId,
       };
 
       const graphTts: GraphData = {
@@ -258,6 +260,7 @@ export class AudioPreviewUseCase {
                 "${:script.filename}_bgm.mp3"
               ),
               script: ":script",
+              bgmId: ":script.bgmId",
             },
             params: {
               musicDir: musicDir,
@@ -435,17 +438,17 @@ export class AudioPreviewUseCase {
     } finally {
       // 一時保存用フォルダを削除
       console.log("🧹 Cleaning up temporary directories...");
-      for (const tempDir of tempDirs) {
-        try {
-          await fsPromise.rm(tempDir, { recursive: true, force: true });
-          console.log(`Deleted temporary directory: ${tempDir}`);
-        } catch (error) {
-          console.warn(
-            `Failed to delete temporary directory ${tempDir}:`,
-            error
-          );
-        }
-      }
+      // for (const tempDir of tempDirs) {
+      //   try {
+      //     await fsPromise.rm(tempDir, { recursive: true, force: true });
+      //     console.log(`Deleted temporary directory: ${tempDir}`);
+      //   } catch (error) {
+      //     console.warn(
+      //       `Failed to delete temporary directory ${tempDir}:`,
+      //       error
+      //     );
+      //   }
+      // }
     }
   }
 }

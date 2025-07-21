@@ -19,6 +19,7 @@ const testEvent = {
     voices: ["shimmer", "echo"],
     speakers: ["Teacher", "Student"],
     scriptId: "podcast-ai-discussion-001",
+    bgmId: "calmMind", // カスタムBGMを指定
   }),
   headers: {
     "Content-Type": "application/json",
@@ -35,49 +36,6 @@ const testEvent = {
     path: "/audio/preview",
     stage: "test",
     requestId: "test-request-id",
-    identity: {
-      sourceIp: "127.0.0.1",
-    },
-  },
-  resource: "/audio/preview",
-  isBase64Encoded: false,
-};
-
-// 追加のテストケース
-const testEventShort = {
-  body: JSON.stringify({
-    script: [
-      {
-        speaker: "Teacher",
-        text: "今日は天気がいいですね。",
-        caption: "",
-      },
-      {
-        speaker: "Student",
-        text: "本当ですね。散歩日和です。",
-        caption: "",
-      },
-    ],
-    tts: "openai",
-    voices: ["shimmer", "echo"],
-    speakers: ["Teacher", "Student"],
-    scriptId: "test-script-short",
-  }),
-  headers: {
-    "Content-Type": "application/json",
-  },
-  httpMethod: "POST",
-  path: "/audio/preview",
-  queryStringParameters: null,
-  pathParameters: null,
-  stageVariables: null,
-  requestContext: {
-    accountId: "123456789012",
-    apiId: "test-api",
-    httpMethod: "POST",
-    path: "/audio/preview",
-    stage: "test",
-    requestId: "test-request-id-short",
     identity: {
       sourceIp: "127.0.0.1",
     },
@@ -105,6 +63,11 @@ const testContext = {
 // テスト実行
 async function runTest() {
   try {
+    // リクエストボディをパースしてBGM設定を確認
+    const requestBody = JSON.parse(testEvent.body);
+    console.log(`📋 BGM設定: ${requestBody.bgmId || "デフォルト (未指定)"}`);
+    console.log(`📋 Script ID: ${requestBody.scriptId}`);
+
     const result = await createPreviewAudio(testEvent, testContext);
     console.log("✅ Test completed successfully!");
     console.log("📤 Result:", JSON.stringify(result, null, 2));
@@ -118,5 +81,4 @@ async function runTest() {
 }
 
 // メイン実行
-
 runTest();
