@@ -93,8 +93,6 @@ export class AudioPreviewUseCase {
       ? "/tmp"
       : path.resolve(process.cwd(), "../../../tmp");
 
-    // TOO: separated, fullそれぞれのURL出力エージェント
-
     // TTSでmp3音声ファイル生成直後の一時保存用フォルダ
     const separatedMp3Dir = path.join(
       basePath,
@@ -125,7 +123,7 @@ export class AudioPreviewUseCase {
     // 一時フォルダのパスを配列で管理（削除用）
     const tempDirs = [separatedMp3Dir, separatedHlsDir, fullMp3Dir, fullHlsDir];
 
-    // TODO モデルを変更できるようにする
+    // TODO gpt-4o-mini-ttsに対応させる
     const openaiTtsModel = "tts-1"; // 標準モデル
 
     try {

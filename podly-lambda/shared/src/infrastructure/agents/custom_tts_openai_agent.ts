@@ -13,22 +13,30 @@ export const ttsOpenaiAgent: AgentFunction<
     apiKey?: string;
     model?: string;
     voice?: string;
+    instructions?: string;
   } & Partial<GraphAISupressError>,
   Partial<GraphAIBuffer | GraphAIOnError>,
   GraphAIText
 > = async ({ namedInputs, params }) => {
   const { text } = namedInputs;
-  const { apiKey, model, voice, supressError } = params;
+  const { apiKey, model, voice, instructions, supressError } = params;
   const openai = new OpenAI({ apiKey });
 
   console.log("input voice:", voice);
 
   try {
-    const response = await openai.audio.speech.create({
-      model: model ?? "tts-1",
+    const modelName = model ?? "tts-1";
+    const requestConfig: any = {
+      model: modelName,
       voice: voice ?? "shimmer",
       input: text,
-    });
+    };
+
+    if (modelName === "gpt-4o-mini-tts" && instructions) {
+      requestConfig.instructions = instructions;
+    }
+
+    const response = await openai.audio.speech.create(requestConfig);
     const buffer = Buffer.from(await response.arrayBuffer());
     return { buffer };
   } catch (e) {
