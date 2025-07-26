@@ -16,7 +16,7 @@ export interface PromptScriptData {
 export interface CreateScriptUseCaseInput {
   prompt: string;
   previousScript?: PromptScriptData[];
-  reference?: string[];
+  reference?: Reference[];
   isSearch?: boolean;
   wordCount?: number;
   situation?: Situation;

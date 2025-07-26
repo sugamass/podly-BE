@@ -19,9 +19,7 @@ export function convertApiRequestToDomainInput(
     (apiScript: ApiPromptScriptData): DomainPromptScriptData => ({
       prompt: apiScript.prompt,
       script: apiScript.script,
-      reference: apiScript.reference?.map(
-        (url: string): Reference => ({ url })
-      ),
+      reference: apiScript.reference, // 型が一致するのでそのまま使用
       situation: apiScript.situation,
     })
   );
@@ -29,7 +27,7 @@ export function convertApiRequestToDomainInput(
   return {
     prompt: apiRequest.prompt,
     previousScript: convertedPreviousScript,
-    reference: apiRequest.reference,
+    reference: apiRequest.reference, // 型が一致するのでそのまま使用
     isSearch: apiRequest.isSearch,
     wordCount: apiRequest.wordCount,
     situation: apiRequest.situation,
@@ -45,9 +43,7 @@ export function convertDomainOutputToApiResponse(
   const convertedNewScript: ApiPromptScriptData = {
     prompt: domainOutput.newScript.prompt,
     script: domainOutput.newScript.script,
-    reference: domainOutput.newScript.reference?.map(
-      (ref: Reference) => ref.url
-    ),
+    reference: domainOutput.newScript.reference, // 型が一致するのでそのまま使用
     situation: domainOutput.newScript.situation,
   };
 
@@ -56,7 +52,7 @@ export function convertDomainOutputToApiResponse(
     (domainScript: DomainPromptScriptData): ApiPromptScriptData => ({
       prompt: domainScript.prompt,
       script: domainScript.script,
-      reference: domainScript.reference?.map((ref: Reference) => ref.url),
+      reference: domainScript.reference, // 型が一致するのでそのまま使用
       situation: domainScript.situation,
     })
   );

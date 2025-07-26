@@ -14,6 +14,11 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /** Reference */
+    Reference: {
+      title?: string;
+      url: string;
+    };
     /** ScriptData */
     ScriptData: {
       speaker?: string;
@@ -24,7 +29,7 @@ export interface components {
     PostCreateScriptRequest: {
       prompt: string;
       previousScript?: components["schemas"]["PromptScriptData"][];
-      reference?: string[];
+      reference?: components["schemas"]["Reference"][];
       isSearch?: boolean;
       wordCount?: number;
       /** @enum {unknown} */
@@ -39,7 +44,7 @@ export interface components {
     PromptScriptData: {
       prompt: string;
       script?: components["schemas"]["ScriptData"][];
-      reference?: string[];
+      reference?: components["schemas"]["Reference"][];
       situation?: string;
     };
     /** PostCreateScriptResponse */

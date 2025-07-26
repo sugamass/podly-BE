@@ -17,6 +17,7 @@ export type {
 import type { components as ScriptComp } from "./generated/script";
 
 // 便利な型エイリアス（生成された型から抽出）
+export type Reference = ScriptComp["schemas"]["Reference"];
 export type ScriptData = ScriptComp["schemas"]["ScriptData"];
 export type PostCreateScriptRequest =
   ScriptComp["schemas"]["PostCreateScriptRequest"];

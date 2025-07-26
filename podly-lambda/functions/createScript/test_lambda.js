@@ -5,7 +5,12 @@ const fs = require("fs");
 const { createScript: handler } = require("./dist/index.js");
 
 // テストリクエストを読み込み
-const testRequest = JSON.parse(fs.readFileSync("./test_requests.json", "utf8"));
+const testRequest = {
+  prompt: "量子コンピュータの最新情報をまとめて",
+  reference: [],
+  isSearch: true,
+  situation: "school",
+};
 
 // APIGatewayProxyEventを模擬
 function createMockEvent(body) {

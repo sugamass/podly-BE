@@ -4,6 +4,11 @@ import * as fs from "fs";
 import * as path from "path";
 
 // Script API スキーマ定義
+export const ReferenceSchema = z.object({
+  title: z.string().optional(),
+  url: z.string(),
+});
+
 export const ScriptDataSchema = z.object({
   speaker: z.string().optional(),
   text: z.string().optional(),
@@ -13,17 +18,19 @@ export const ScriptDataSchema = z.object({
 export const PromptScriptDataSchema = z.object({
   prompt: z.string(),
   script: z.array(ScriptDataSchema).optional(),
-  reference: z.array(z.string()).optional(),
+  reference: z.array(ReferenceSchema).optional(),
   situation: z.string().optional(),
 });
 
 export const PostCreateScriptRequestSchema = z.object({
   prompt: z.string(),
   previousScript: z.array(PromptScriptDataSchema).optional(),
-  reference: z.array(z.string()).optional(),
+  reference: z.array(ReferenceSchema).optional(),
   isSearch: z.boolean().optional(),
   wordCount: z.number().optional(),
-  situation: z.enum(["school", "expert", "interview", "friends", "radio_personality"]).optional(),
+  situation: z
+    .enum(["school", "expert", "interview", "friends", "radio_personality"])
+    .optional(),
 });
 
 export const PostCreateScriptResponseSchema = z.object({
@@ -53,8 +60,12 @@ export const AudioPreviewResponseSchema = z.object({
   scriptId: z.string().optional(),
 });
 
-export type PostCreateScriptRequest = z.infer<typeof PostCreateScriptRequestSchema>;
-export type PostCreateScriptResponse = z.infer<typeof PostCreateScriptResponseSchema>;
+export type PostCreateScriptRequest = z.infer<
+  typeof PostCreateScriptRequestSchema
+>;
+export type PostCreateScriptResponse = z.infer<
+  typeof PostCreateScriptResponseSchema
+>;
 export type AudioPreviewRequest = z.infer<typeof AudioPreviewRequestSchema>;
 export type AudioPreviewResponse = z.infer<typeof AudioPreviewResponseSchema>;
 
@@ -67,7 +78,9 @@ export class SchemaValidator {
       return PostCreateScriptRequestSchema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errors = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
+        const errors = error.errors
+          .map((err) => `${err.path.join(".")}: ${err.message}`)
+          .join(", ");
         throw new Error(`Script request validation failed: ${errors}`);
       }
       throw error;
@@ -82,7 +95,9 @@ export class SchemaValidator {
       return PostCreateScriptResponseSchema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errors = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
+        const errors = error.errors
+          .map((err) => `${err.path.join(".")}: ${err.message}`)
+          .join(", ");
         throw new Error(`Script response validation failed: ${errors}`);
       }
       throw error;
@@ -97,7 +112,9 @@ export class SchemaValidator {
       return AudioPreviewRequestSchema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errors = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
+        const errors = error.errors
+          .map((err) => `${err.path.join(".")}: ${err.message}`)
+          .join(", ");
         throw new Error(`Audio preview request validation failed: ${errors}`);
       }
       throw error;
@@ -112,7 +129,9 @@ export class SchemaValidator {
       return AudioPreviewResponseSchema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errors = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
+        const errors = error.errors
+          .map((err) => `${err.path.join(".")}: ${err.message}`)
+          .join(", ");
         throw new Error(`Audio preview response validation failed: ${errors}`);
       }
       throw error;
@@ -122,9 +141,11 @@ export class SchemaValidator {
   /**
    * バリデーションエラーの詳細情報を取得
    */
-  static getValidationErrorDetails(error: z.ZodError): Array<{ path: string; message: string; received?: unknown }> {
+  static getValidationErrorDetails(
+    error: z.ZodError
+  ): Array<{ path: string; message: string; received?: unknown }> {
     return error.errors.map((err) => ({
-      path: err.path.join('.'),
+      path: err.path.join("."),
       message: err.message,
       received: (err as any).received,
     }));

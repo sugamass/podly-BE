@@ -80,3 +80,73 @@ export const schoolPrompt = `次に与えるトピックについて、内容全
       "text": "ありがとうございます。とても良い勉強になりました。"
     },
   ]`;
+
+export const webSearchQueryPrompt = `
+  目標は、ターゲットを絞ったWeb検索クエリを生成することです。
+
+<コンテキスト>
+現在の日付: {current_date}
+クエリには、この日付時点で入手可能な最新の情報が含まれていることを確認してください。
+</コンテキスト>
+
+<トピック>
+ユーザープロンプト: {user_prompt}
+</トピック>
+
+<フォーマット>
+レスポンスは、以下のキーを含むJSONオブジェクトとしてフォーマットしてください。
+- "query": 実際の検索クエリ文字列
+</フォーマット>
+
+<例>
+出力例:
+{{
+"query": "machine learning transformer architecture explained",
+}}
+</例>
+
+レスポンスはJSON形式で提供してください。タグやバッククォートは含めないでください。
+例のように、JSONのみを返してください。
+  `;
+
+export const generateWebSearchQuery = (
+  current_date: string,
+  user_prompt: string
+) => {
+  return webSearchQueryPrompt
+    .replace("{current_date}", current_date)
+    .replace("{user_prompt}", user_prompt);
+};
+
+export const summarizeWebSearchPrompt = `
+<検索結果>
+{web_search_result}
+</検索結果>
+
+<目標>
+上記の検索結果に基づいて、質の高い要約を生成する。
+</目標>
+
+<要件>
+1. 検索結果を注意深く読む
+2. 検索結果から、ユーザーのトピックに最も関連性の高い情報を強調表示する。
+3. 情報の流れが一貫していることを確認する。
+< /要件 >
+
+< フォーマット >
+- 指定されたJSONフォーマットに従って、検索結果を要約する。JSON以外は何も出力してはいけない。
+< /フォーマット >
+
+<タスク>
+まず、提供されたコンテキストについて慎重に検討します。次に、ユーザー入力に対応するコンテキストの要約を指定されたJSONフォーマットに從って生成します。
+</タスク>
+`;
+
+export const generatewebSearchUserPrompt = (
+  userPrompt: string,
+  webSearchResult: string
+) => {
+  return summarizeWebSearchPrompt
+    .replace("{user_prompt}", userPrompt)
+    .replace("{web_search_result}", webSearchResult);
+};

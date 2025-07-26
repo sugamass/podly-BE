@@ -4,9 +4,12 @@
   "description": "Create Script Lambda function",
   "main": "dist/index.js",
   "scripts": {
-    "build": "webpack --mode development",
+    "build": "./build-local.sh",
+    "build:local": "./build-local.sh",
+    "build:prod": "webpack --mode production",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:local": "node test_lambda.js"
   },
   "dependencies": {
     "@podly/shared": "file:../../shared",

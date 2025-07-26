@@ -38,7 +38,7 @@ export * from "./application/usecases/AudioUsecases";
 export * from "./application/usecases/SystemPrompts";
 
 // インフラストラクチャ層のエクスポート
-export { default as customOpenaiAgent } from "./infrastructure/agents/openaiAgent";
+export { default as customOpenaiAgent } from "./infrastructure/agents/custom_openai_agent";
 export { default as customTtsOpenaiAgent } from "./infrastructure/agents/custom_tts_openai_agent";
 export { default as combineFilesAgent } from "./infrastructure/agents/combine_files_agent";
 export { default as addBGMAgent } from "./infrastructure/agents/add_bgm_agent";

@@ -34,6 +34,22 @@ paths:
               $ref: '#/components/schemas/PostCreateScriptRequest'
 components:
   schemas:
+    Reference:
+      title: Reference
+      x-stoplight:
+        id: ref123456789abc
+      type: object
+      required:
+        - url
+      properties:
+        title:
+          type: string
+          x-stoplight:
+            id: ref_title_12345
+        url:
+          type: string
+          x-stoplight:
+            id: ref_url_12345
     ScriptData:
       title: ScriptData
       x-stoplight:
@@ -75,9 +91,7 @@ components:
           x-stoplight:
             id: jthqzlopcol97
           items:
-            x-stoplight:
-              id: b3bk5pflqznqy
-            type: string
+            $ref: '#/components/schemas/Reference'
         isSearch:
           type: boolean
           x-stoplight:
@@ -118,9 +132,7 @@ components:
           x-stoplight:
             id: c5mxgaf3od9h2
           items:
-            x-stoplight:
-              id: qesuk2rjlquwk
-            type: string
+            $ref: '#/components/schemas/Reference'
         situation:
           type: string
           x-stoplight:
