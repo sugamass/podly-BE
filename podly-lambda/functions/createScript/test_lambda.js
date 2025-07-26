@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 
 // ビルドされたLambda関数をインポート
-const { handler } = require("./dist/index.js");
+const { createScript: handler } = require("./dist/index.js");
 
 // テストリクエストを読み込み
 const testRequest = JSON.parse(fs.readFileSync("./test_requests.json", "utf8"));

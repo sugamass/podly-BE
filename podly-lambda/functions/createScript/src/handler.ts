@@ -6,44 +6,16 @@ import type {
 import {
   successResponse,
   errorResponse,
-  badRequestResponse,
   CreateScriptUseCase,
   convertApiRequestToDomainInput,
   convertDomainOutputToApiResponse,
+  SchemaValidator,
+  ValidationError,
+  type PostCreateScriptRequest,
+  type PostCreateScriptResponse,
 } from "@podly/shared";
 
-// APIスキーマに基づく型定義
-interface ScriptData {
-  speaker?: string;
-  text?: string;
-  caption?: string;
-}
-
-interface PromptScriptData {
-  prompt: string;
-  script?: ScriptData[];
-  reference?: string[];
-  situation?: string;
-}
-
-interface PostCreateScriptRequest {
-  prompt: string;
-  previousScript?: PromptScriptData[];
-  reference?: string[];
-  isSearch?: boolean;
-  wordCount?: number;
-  situation?:
-    | "school"
-    | "expert"
-    | "interview"
-    | "friends"
-    | "radio_personality";
-}
-
-interface PostCreateScriptResponse {
-  newScript: PromptScriptData;
-  previousScript?: PromptScriptData[];
-}
+// 型定義は@podly/sharedからインポート
 
 // UseCaseの初期化
 const createScriptUseCase = new CreateScriptUseCase();
@@ -59,47 +31,44 @@ export const createScript = async (
     // リクエストボディの検証
     if (!event.body) {
       console.log("❌ Request body is missing");
-      return badRequestResponse("Request body is required");
+      return new ValidationError(
+        "Request body is required",
+        [{ path: "body", message: "Request body is required" }]
+      ).toApiResponse();
     }
 
-    let apiRequest: PostCreateScriptRequest;
+    let rawRequest: unknown;
     try {
-      apiRequest = JSON.parse(event.body);
+      rawRequest = JSON.parse(event.body);
       console.log(
-        "📝 Parsed API Request:",
-        JSON.stringify(apiRequest, null, 2)
+        "📝 Parsed request:",
+        JSON.stringify(rawRequest, null, 2)
       );
     } catch (error) {
       console.log("❌ JSON parse error:", error);
-      return badRequestResponse("Invalid JSON format");
+      return new ValidationError(
+        "Invalid JSON format",
+        [{ path: "body", message: "Invalid JSON format" }]
+      ).toApiResponse();
     }
 
-    // 必須フィールドのバリデーション
-    if (!apiRequest.prompt || typeof apiRequest.prompt !== "string") {
-      console.log("❌ Missing or invalid prompt field");
-      return badRequestResponse(
-        "Field 'prompt' is required and must be a string"
-      );
+    // OpenAPIスキーマに基づくバリデーション
+    let apiRequest: PostCreateScriptRequest;
+    try {
+      apiRequest = SchemaValidator.validateScriptRequest(rawRequest);
+      console.log("✅ Request validation passed");
+      console.log("📝 Validated API Request:", JSON.stringify(apiRequest, null, 2));
+    } catch (error) {
+      console.log("❌ Request validation failed:", error);
+      if (error instanceof ValidationError) {
+        console.log(error.toLogFormat());
+        return error.toApiResponse();
+      }
+      return new ValidationError(
+        error instanceof Error ? error.message : "Validation failed",
+        [{ path: "unknown", message: error instanceof Error ? error.message : "Validation failed" }]
+      ).toApiResponse();
     }
-
-    // optionalフィールドのバリデーション
-    if (
-      apiRequest.situation &&
-      ![
-        "school",
-        "expert",
-        "interview",
-        "friends",
-        "radio_personality",
-      ].includes(apiRequest.situation)
-    ) {
-      console.log("❌ Invalid situation value:", apiRequest.situation);
-      return badRequestResponse(
-        "Field 'situation' must be one of: school, expert, interview, friends, radio_personality"
-      );
-    }
-
-    console.log("✅ Request validation passed");
 
     // ドメイン入力への変換
     const domainInput = convertApiRequestToDomainInput(apiRequest);
@@ -112,9 +81,27 @@ export const createScript = async (
     console.log("📤 Domain Output:", JSON.stringify(domainOutput, null, 2));
 
     // API レスポンスへの変換
-    const apiResponse: PostCreateScriptResponse =
+    const rawApiResponse: PostCreateScriptResponse =
       convertDomainOutputToApiResponse(domainOutput);
-    console.log("🎯 Final API Response:", JSON.stringify(apiResponse, null, 2));
+    console.log("🔄 Raw API Response:", JSON.stringify(rawApiResponse, null, 2));
+
+    // レスポンスのバリデーション
+    let apiResponse: PostCreateScriptResponse;
+    try {
+      apiResponse = SchemaValidator.validateScriptResponse(rawApiResponse);
+      console.log("✅ Response validation passed");
+      console.log("🎯 Final API Response:", JSON.stringify(apiResponse, null, 2));
+    } catch (error) {
+      console.error("❌ Response validation failed:", error);
+      if (error instanceof ValidationError) {
+        console.error(error.toLogFormat());
+        return errorResponse("Internal response validation error", 500);
+      }
+      return errorResponse(
+        error instanceof Error ? error.message : "Response validation failed",
+        500
+      );
+    }
 
     return successResponse(apiResponse);
   } catch (error) {

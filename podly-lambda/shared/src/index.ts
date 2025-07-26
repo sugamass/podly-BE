@@ -44,3 +44,7 @@ export { default as combineFilesAgent } from "./infrastructure/agents/combine_fi
 export { default as addBGMAgent } from "./infrastructure/agents/add_bgm_agent";
 export { default as createDataForHlsAgent } from "./infrastructure/agents/create_data_for_hls_agent";
 export { default as waitForFileAgent } from "./infrastructure/agents/wait_for_file_agent";
+
+// バリデーション機能のエクスポート
+export * from "./infrastructure/validation/SchemaValidator";
+export * from "./infrastructure/validation/ValidationError";

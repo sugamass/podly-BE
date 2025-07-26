@@ -210,9 +210,12 @@ export class CreateScriptUseCase {
       }));
     }
 
+    const script = JSON.parse(generatedScriptString);
+    const scriptResult = script.scripts;
+
     return {
       prompt: request.prompt,
-      script: JSON.parse(generatedScriptString),
+      script: scriptResult,
       reference: outputReference || [],
       situation: request.situation,
     };
