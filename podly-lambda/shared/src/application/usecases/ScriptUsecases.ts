@@ -8,12 +8,12 @@ import { GraphAI, GraphData } from "graphai";
 import * as agents from "@graphai/agents";
 import {
   schoolPrompt,
-  summarizeWebSearchPrompt,
   generateWebSearchQuery,
   generatewebSearchUserPrompt,
 } from "./SystemPrompts";
 import customOpenaiAgent from "../../infrastructure/agents/custom_openai_agent";
 import tavilySearchAgent from "../../infrastructure/agents/tavily_agent";
+import tavilyExtractAgent from "../../infrastructure/agents/tavily_extract_agent";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
@@ -69,6 +69,12 @@ export class CreateScriptUseCase {
       });
     }
 
+    // referenceで指定ありまたはweb検索機能onの場合は検索を行う
+    const isSearch =
+      (request.reference && request.reference.length > 0) || request.isSearch;
+
+    const referenceUrls = request.reference?.map((r) => r.url);
+
     const zScriptFormat = z.object({
       speaker: z.string(),
       text: z.string(),
@@ -78,7 +84,7 @@ export class CreateScriptUseCase {
       scripts: z.array(zScriptFormat),
     });
 
-    // TODO extractも含める
+    // graphAIのanyInputの挙動が改良されたら、extractも含めたい
     const webSearchGraph: GraphData = {
       version: 2.0,
       nodes: {
@@ -126,10 +132,12 @@ export class CreateScriptUseCase {
           agent: (namedInputs) => {
             const { webSearchResult } = namedInputs;
 
+            console.log("webSearchResult:", webSearchResult);
+
             const webSearchUrls = webSearchResult.results?.map((r: any) => {
               return {
                 url: r.url,
-                title: r.title,
+                title: r.title ?? "",
               };
             });
 
@@ -142,7 +150,9 @@ export class CreateScriptUseCase {
         },
         updateMessages: {
           agent: (namedInputs) => {
-            const { webSearchResult, messages } = namedInputs;
+            const { messages, webSearchResult } = namedInputs;
+
+            console.log("webSearchResult2:", webSearchResult);
 
             const webSearchResultString =
               webSearchResult.results
@@ -187,6 +197,86 @@ export class CreateScriptUseCase {
       },
     };
 
+    const extractGraph: GraphData = {
+      version: 2.0,
+      nodes: {
+        webExtract: {
+          agent: "tavilyExtractAgent",
+          params: {
+            apiKey: process.env.TAVILY_API_KEY,
+            extract_depth: "basic",
+            format: "markdown",
+            timeout: 10000,
+          },
+          inputs: {
+            urls: ":parent_reference",
+          },
+        },
+        outputWebSearchResult: {
+          agent: (namedInputs) => {
+            const { webSearchResult } = namedInputs;
+
+            const webSearchUrls = webSearchResult.results?.map((r: any) => {
+              return {
+                url: r.url,
+                title: r.title ?? "",
+              };
+            });
+
+            return webSearchUrls;
+          },
+          inputs: {
+            webSearchResult: ":webExtract",
+          },
+          isResult: true,
+        },
+        updateMessages: {
+          agent: (namedInputs) => {
+            const { webSearchResult, messages } = namedInputs;
+
+            const webSearchResultString =
+              webSearchResult.results
+                ?.map((r: any) =>
+                  JSON.stringify({
+                    title: r.title,
+                    content: r.raw_content,
+                  })
+                )
+                .join("\n\n") ?? "";
+
+            const newMessage = {
+              role: "system",
+              content: generatewebSearchUserPrompt(
+                messages,
+                webSearchResultString
+              ),
+            };
+            messages.push(newMessage);
+
+            return messages;
+          },
+          inputs: {
+            messages: ":parent_messages",
+            webSearchResult: ":webExtract",
+          },
+        },
+        summarizellm: {
+          agent: "customOpenaiAgent",
+          params: {
+            model: "gpt-4.1",
+            apiKey: process.env.OPENAI_API_KEY,
+            response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
+          },
+          inputs: {
+            messages: ":updateMessages",
+            prompt: ":parent_prompt",
+          },
+          console: { after: true },
+          isResult: true,
+        },
+      },
+    };
+
     const createScriptGraph: GraphData = {
       version: 2.0,
       nodes: {
@@ -205,21 +295,6 @@ export class CreateScriptUseCase {
         generateWebSearchQueryPrompt: {
           value: {},
         },
-        referenceCheck: {
-          agent: (namedInputs) => {
-            const { reference } = namedInputs;
-            return reference.length > 0;
-          },
-          inputs: { reference: ":reference" },
-        },
-        searchCheck: {
-          agent: (namedInputs) => {
-            const { isSearch } = namedInputs;
-            return isSearch;
-          },
-          inputs: { isSearch: ":isSearch" },
-          unless: ":referenceCheck",
-        },
         llm: {
           agent: "customOpenaiAgent",
           params: {
@@ -231,7 +306,15 @@ export class CreateScriptUseCase {
             messages: ":messages",
             prompt: ":promptInput",
           },
-          unless: ":searchCheck",
+          unless: ":isSearch",
+        },
+        referenceCheck: {
+          agent: (namedInputs) => {
+            const { reference } = namedInputs;
+            return reference.length > 0;
+          },
+          inputs: { reference: ":reference" },
+          if: ":isSearch",
         },
         webSearchGraph: {
           agent: "nestedAgent",
@@ -240,22 +323,42 @@ export class CreateScriptUseCase {
             parent_prompt: ":promptInput",
             parent_webSearchQuery: ":generateWebSearchQueryPrompt",
           },
-          if: ":searchCheck",
           graph: webSearchGraph,
+          unless: ":referenceCheck",
+        },
+        webExtractGraph: {
+          agent: "nestedAgent",
+          inputs: {
+            parent_messages: ":messages",
+            parent_prompt: ":promptInput",
+            parent_reference: ":reference",
+          },
+          graph: extractGraph,
+          if: ":referenceCheck",
         },
         output: {
           agent: "copyAgent",
           anyInput: true,
           inputs: {
-            array: [":llm.text", ":webSearchGraph.summarizellm.text"],
+            array: [
+              ":llm.text",
+              ":webSearchGraph.summarizellm.text",
+              ":webExtractGraph.summarizellm.text",
+            ],
           },
           isResult: true,
         },
         urlArrayOutput: {
           agent: "copyAgent",
-          inputs: { url: ":webSearchGraph.outputWebSearchResult" },
+          anyInput: true,
+          inputs: {
+            url: [
+              ":webSearchGraph.outputWebSearchResult",
+              ":webExtractGraph.outputWebSearchResult",
+            ],
+          },
           isResult: true,
-          if: ":searchCheck",
+          if: ":isSearch",
         },
       },
     };
@@ -264,11 +367,12 @@ export class CreateScriptUseCase {
       ...agents,
       customOpenaiAgent,
       tavilySearchAgent,
+      tavilyExtractAgent,
     });
     graphAI.injectValue("promptInput", request.prompt);
-    graphAI.injectValue("isSearch", request.isSearch);
+    graphAI.injectValue("isSearch", isSearch);
     graphAI.injectValue("messages", messages);
-    graphAI.injectValue("reference", request?.reference ?? []);
+    graphAI.injectValue("reference", referenceUrls);
 
     const now = new Date()
       .toLocaleString("en-US", { timeZone: "Asia/Tokyo" })
@@ -293,7 +397,7 @@ export class CreateScriptUseCase {
           if (key2 === "array") {
             generatedScriptString = (value2 as any[])[0];
           } else if (key2 === "url") {
-            urlArrayOutput = value2 as any[];
+            urlArrayOutput = (value2 as any[])[0];
           }
         }
       }
@@ -305,7 +409,6 @@ export class CreateScriptUseCase {
 
     let outputReference: Reference[] = [];
 
-    console.log("urlArrayOutput:", urlArrayOutput);
     if (urlArrayOutput?.length > 0) {
       outputReference = urlArrayOutput.map((searchResult: any) => ({
         url: searchResult.url,

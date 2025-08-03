@@ -38,6 +38,4 @@ export type Situation =
 export type Reference = {
   url: string;
   title?: string;
-  startIndex?: number;
-  endIndex?: number;
 };
