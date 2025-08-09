@@ -75,6 +75,41 @@ export class CreateScriptUseCase {
 
     const referenceUrls = request.reference?.map((r) => r.url);
 
+    const fieldsAndUrls = [
+      {
+        field: "general",
+        urls: ["https://www.nhk.or.jp/rss/news/cat0.xml"],
+      },
+      {
+        field: "social",
+        urls: ["https://www.nhk.or.jp/rss/news/cat1.xml"],
+      },
+      {
+        field: "technology",
+        urls: ["https://www.nhk.or.jp/rss/news/cat2.xml"],
+      },
+      {
+        field: "politics",
+        urls: ["https://www.nhk.or.jp/rss/news/cat3.xml"],
+      },
+      {
+        field: "economy",
+        urls: ["https://www.nhk.or.jp/rss/news/cat4.xml"],
+      },
+      {
+        field: "world",
+        urls: ["https://www.nhk.or.jp/rss/news/cat5.xml"],
+      },
+      {
+        field: "sports",
+        urls: ["https://www.nhk.or.jp/rss/news/cat6.xml"],
+      },
+      {
+        field: "entertainment",
+        urls: ["https://www.nhk.or.jp/rss/news/cat7.xml"],
+      },
+    ];
+
     const zScriptFormat = z.object({
       speaker: z.string(),
       text: z.string(),
@@ -84,10 +119,73 @@ export class CreateScriptUseCase {
       scripts: z.array(zScriptFormat),
     });
 
+    const FieldEnum = z.enum([
+      "general",
+      "social",
+      "technology",
+      "politics",
+      "economy",
+      "sports",
+      "world",
+      "entertainment",
+    ]);
+    const judgeRssNeedFormat = z.object({
+      rssNeed: z.boolean(),
+      field: z.string(),
+      keywords: z.array(FieldEnum),
+    });
+
+    const weSearchWithRssGraph: GraphData = {
+      version: 2.0,
+      nodes: {
+        rssFeedUrls: {
+          agent: (namedInputs) => {
+            const { fieldAndKeywords } = namedInputs;
+            const matchedField = fieldsAndUrls.find(
+              (f) => f.field === fieldAndKeywords.field
+            );
+
+            const rssFeedUrls = matchedField?.urls ?? [];
+
+            return rssFeedUrls;
+          },
+          inputs: { fieldAndKeywords: ":parent_fieldAndKeywords" },
+        },
+      },
+    };
+
     // graphAIのanyInputの挙動が改良されたら、extractも含めたい
     const webSearchGraph: GraphData = {
       version: 2.0,
       nodes: {
+        judgeRssNeed: {
+          agent: "customOpenaiAgent",
+          params: {
+            model: "gpt-4o-mini",
+            apiKey: process.env.OPENAI_API_KEY,
+            response_format: zodResponseFormat(
+              judgeRssNeedFormat,
+              "judgeRssNeed"
+            ),
+          },
+          inputs: {
+            messages: ":parent_messages",
+            prompt: ":parent_prompt",
+          },
+        },
+        ifRss: {
+          agent: (namedInputs) => {
+            const { judgeRssNeed } = namedInputs;
+
+            try {
+              const judgeRssNeedObject = JSON.parse(judgeRssNeed);
+              return judgeRssNeedObject.rssNeed;
+            } catch (error) {
+              throw new Error("Failed to parse judgeRssNeed");
+            }
+          },
+          inputs: { judgeRssNeed: ":judgeRssNeed.text" },
+        },
         generateWebSearchQuery: {
           agent: "customOpenaiAgent",
           params: {
@@ -102,6 +200,7 @@ export class CreateScriptUseCase {
             messages: ":parent_webSearchQuery",
             prompt: ":parent_prompt",
           },
+          unless: ":ifRss",
         },
         convertWebSearchQuery: {
           agent: (namedInputs) => {
