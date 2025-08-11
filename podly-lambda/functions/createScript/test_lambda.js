@@ -6,9 +6,15 @@ const { createScript: handler } = require("./dist/index.js");
 
 // テストリクエストを読み込み
 const testRequest = {
-  prompt: "最近、人がクマに襲われた事件をまとめて",
-  reference: [],
+  prompt: "最新のAIの研究事情をまとめて",
+  reference: [
+    // {
+    //   title: "",
+    //   url: "https://news.yahoo.co.jp/articles/39704671468449c089e076f9982074b35127468c",
+    // },
+  ],
   isSearch: true,
+  situation: "school",
 };
 
 // APIGatewayProxyEventを模擬

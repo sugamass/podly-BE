@@ -10,7 +10,8 @@
       "@podly/shared": ["shared/src/index.ts"],
       "@podly/shared/*": ["shared/src/*"]
     },
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
+    "module": "Node16",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true

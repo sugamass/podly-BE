@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack");
 
 module.exports = {
   entry: "./src/index.ts",
@@ -26,6 +27,11 @@ module.exports = {
       "@shared": path.resolve(__dirname, "../../shared/src"),
       "@podly/shared": path.resolve(__dirname, "../../shared/src/index.ts"),
     },
+    fallback: {
+      canvas: false,
+      bufferutil: false,
+      "utf-8-validate": false,
+    },
   },
   output: {
     filename: "index.js",
@@ -34,7 +40,18 @@ module.exports = {
   },
   externals: {
     "aws-sdk": "aws-sdk",
+    canvas: "canvas",
+    bufferutil: "bufferutil",
+    "utf-8-validate": "utf-8-validate",
   },
+  plugins: [
+    new webpack.IgnorePlugin({
+      resourceRegExp: /^(canvas|bufferutil|utf-8-validate)$/,
+    }),
+    new webpack.IgnorePlugin({
+      resourceRegExp: /^(fsevents)$/,
+    }),
+  ],
   optimization: {
     minimize: true,
     usedExports: true,
