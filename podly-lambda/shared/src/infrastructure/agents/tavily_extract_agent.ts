@@ -77,12 +77,12 @@ export const tavilyExtractAgent: AgentFunction<
       sdkOptions.includeImages = params.includeImages;
     if (params?.extractDepth !== undefined)
       sdkOptions.extractDepth = params.extractDepth;
-    if (params?.format !== undefined)
-      sdkOptions.format = params.format;
-    if (params?.timeout !== undefined)
-      sdkOptions.timeout = params.timeout;
+    if (params?.format !== undefined) sdkOptions.format = params.format;
+    if (params?.timeout !== undefined) sdkOptions.timeout = params.timeout;
 
     const response = await tvly.extract(urls, sdkOptions);
+
+    console.log("tavily extract:", response);
 
     return response;
   } catch (error) {
@@ -107,7 +107,8 @@ const tavilyExtractAgentInfo: AgentFunctionInfo = {
       },
       includeImages: {
         type: "boolean",
-        description: "Include image URLs from the extracted content (default: false)",
+        description:
+          "Include image URLs from the extracted content (default: false)",
       },
       extractDepth: {
         type: "string",
@@ -118,8 +119,7 @@ const tavilyExtractAgentInfo: AgentFunctionInfo = {
       format: {
         type: "string",
         enum: ["markdown", "text"],
-        description:
-          "Output format for extracted content (default: markdown)",
+        description: "Output format for extracted content (default: markdown)",
       },
       timeout: {
         type: "number",
@@ -192,7 +192,9 @@ const tavilyExtractAgentInfo: AgentFunctionInfo = {
             url: "https://en.wikipedia.org/wiki/Artificial_intelligence",
             rawContent:
               "# Artificial Intelligence\n\nArtificial intelligence (AI) is intelligence demonstrated by machines...",
-            images: ["https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/AI-ML-DL.png"],
+            images: [
+              "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/AI-ML-DL.png",
+            ],
             favicon: "https://en.wikipedia.org/static/favicon/wikipedia.ico",
           },
         ],

@@ -150,3 +150,23 @@ export const generatewebSearchUserPrompt = (
     .replace("{user_prompt}", userPrompt)
     .replace("{web_search_result}", webSearchResult);
 };
+
+export const judgeRssNeedPrompt = `
+次に与えるユーザープロンプトに対して、RSSを使用する必要があるかどうかを判断してください。
+
+<フォーマット>
+レスポンスは、以下のキーを含むJSONオブジェクトとしてフォーマットしてください。
+- "rssNeed": 必要な場合はtrue、不要な場合はfalse
+- "field": RSSフィードのジャンル。選択肢は、general, social, technology, politics, economy, sports, world, entertainment。RSS不使用の場合はnull。
+- "keywords": 取得対象記事の限定的なキーワード（例: "AI", "関税"）。一般的な語（例: "最新", "研究"）は避けること。キーワード未指定の場合、[]。
+</フォーマット>
+
+<例>
+出力例:
+{
+"rssNeed": true,
+"field": "technology",
+"keywords": ["AI"]
+}
+</例>
+`;

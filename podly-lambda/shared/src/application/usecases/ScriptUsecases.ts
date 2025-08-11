@@ -10,10 +10,13 @@ import {
   schoolPrompt,
   generateWebSearchQuery,
   generatewebSearchUserPrompt,
+  judgeRssNeedPrompt,
 } from "./SystemPrompts";
 import customOpenaiAgent from "../../infrastructure/agents/custom_openai_agent";
 import tavilySearchAgent from "../../infrastructure/agents/tavily_agent";
 import tavilyExtractAgent from "../../infrastructure/agents/tavily_extract_agent";
+import rssReaderAgent from "../../infrastructure/agents/rss_reader_agent";
+import htmlArticleExtractorAgent from "../../infrastructure/agents/html_extract_agent";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
@@ -75,7 +78,7 @@ export class CreateScriptUseCase {
 
     const referenceUrls = request.reference?.map((r) => r.url);
 
-    const fieldsAndUrls = [
+    const rssFieldsAndUrls = [
       {
         field: "general",
         urls: ["https://www.nhk.or.jp/rss/news/cat0.xml"],
@@ -131,31 +134,205 @@ export class CreateScriptUseCase {
     ]);
     const judgeRssNeedFormat = z.object({
       rssNeed: z.boolean(),
-      field: z.string(),
-      keywords: z.array(FieldEnum),
+      field: FieldEnum,
+      keywords: z.array(z.string()),
     });
 
-    const weSearchWithRssGraph: GraphData = {
+    const extractGraph: GraphData = {
       version: 2.0,
       nodes: {
-        rssFeedUrls: {
-          agent: (namedInputs) => {
-            const { fieldAndKeywords } = namedInputs;
-            const matchedField = fieldsAndUrls.find(
-              (f) => f.field === fieldAndKeywords.field
-            );
-
-            const rssFeedUrls = matchedField?.urls ?? [];
-
-            return rssFeedUrls;
+        webExtract: {
+          agent: "tavilyExtractAgent",
+          params: {
+            apiKey: process.env.TAVILY_API_KEY,
+            extract_depth: "basic",
+            format: "markdown",
+            timeout: 10000,
           },
-          inputs: { fieldAndKeywords: ":parent_fieldAndKeywords" },
+          inputs: {
+            urls: ":parent_reference",
+          },
+        },
+        outputWebSearchResult: {
+          agent: (namedInputs) => {
+            const { webSearchResult } = namedInputs;
+
+            const webSearchUrls = webSearchResult.results?.map((r: any) => {
+              return {
+                url: r.url,
+                title: r.title ?? "",
+              };
+            });
+
+            return webSearchUrls;
+          },
+          inputs: {
+            webSearchResult: ":webExtract",
+          },
+          isResult: true,
+        },
+        updateMessages: {
+          agent: (namedInputs) => {
+            const { webSearchResult, messages } = namedInputs;
+
+            const webSearchResultString =
+              webSearchResult.results
+                ?.map((r: any) =>
+                  JSON.stringify({
+                    title: r.title,
+                    content: r.raw_content,
+                  })
+                )
+                .join("\n\n") ?? "";
+
+            const newMessage = {
+              role: "system",
+              content: generatewebSearchUserPrompt(
+                messages,
+                webSearchResultString
+              ),
+            };
+            messages.push(newMessage);
+
+            return messages;
+          },
+          inputs: {
+            messages: ":parent_messages",
+            webSearchResult: ":webExtract",
+          },
+        },
+        summarizellm: {
+          agent: "customOpenaiAgent",
+          params: {
+            model: "gpt-4.1",
+            apiKey: process.env.OPENAI_API_KEY,
+            response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
+          },
+          inputs: {
+            messages: ":updateMessages",
+            prompt: ":parent_prompt",
+          },
+          console: { after: true },
+          isResult: true,
         },
       },
     };
 
-    // graphAIのanyInputの挙動が改良されたら、extractも含めたい
-    const webSearchGraph: GraphData = {
+    const rssExtractGraph: GraphData = {
+      version: 2.0,
+      nodes: {
+        rssFeedUrls: {
+          agent: (namedInputs) => {
+            const { rssFieldAndKeywords } = namedInputs;
+            const matchedField = rssFieldsAndUrls.find(
+              (f) => f.field === rssFieldAndKeywords.field
+            );
+
+            const rssFeedUrls = matchedField?.urls ?? [];
+
+            const keywords = rssFieldAndKeywords.keywords;
+
+            return { urls: rssFeedUrls, keywords };
+          },
+          inputs: { rssFieldAndKeywords: ":parent_rssFieldAndKeywords" },
+        },
+        rssReader: {
+          agent: "rssReaderAgent",
+          inputs: {
+            feedUrls: ":rssFeedUrls.urls",
+            keywords: ":rssFeedUrls.keywords",
+          },
+        },
+        newsUrls: {
+          agent: (namedInputs) => {
+            const { rssReader } = namedInputs;
+            const urls = rssReader.map((r: any) => r.link);
+            return urls;
+          },
+          inputs: { rssReader: ":rssReader" },
+        },
+        htmlExtract: {
+          agent: "htmlArticleExtractorAgent",
+          inputs: {
+            urls: ":newsUrls",
+          },
+        },
+        // extract: {
+        //   agent: "nestedAgent",
+        //   inputs: {
+        //     parent_reference: ":newsUrls",
+        //     parent_messages: ":parent_messages",
+        //     parent_prompt: ":parent_prompt",
+        //   },
+        //   graph: extractGraph,
+        // },
+        // TODO：mapで並列処理
+        outputWebSearchResult: {
+          agent: (namedInputs) => {
+            const { webSearchResult } = namedInputs;
+
+            const webSearchUrls = webSearchResult.map((r: any) => {
+              return {
+                url: r.url,
+                title: r.title ?? "",
+              };
+            });
+
+            return webSearchUrls;
+          },
+          inputs: {
+            webSearchResult: ":htmlExtract",
+          },
+          isResult: true,
+        },
+        updateMessages: {
+          agent: (namedInputs) => {
+            const { webSearchResult, messages } = namedInputs;
+
+            const webSearchResultString =
+              webSearchResult
+                ?.map((r: any) =>
+                  JSON.stringify({
+                    title: r.title,
+                    content: r.bodyText,
+                  })
+                )
+                .join("\n\n") ?? "";
+
+            const newMessage = {
+              role: "system",
+              content: generatewebSearchUserPrompt(
+                messages,
+                webSearchResultString
+              ),
+            };
+            messages.push(newMessage);
+
+            return messages;
+          },
+          inputs: {
+            messages: ":parent_messages",
+            webSearchResult: ":htmlExtract",
+          },
+        },
+        summarizellm: {
+          agent: "customOpenaiAgent",
+          params: {
+            model: "gpt-4.1",
+            apiKey: process.env.OPENAI_API_KEY,
+            response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
+          },
+          inputs: {
+            messages: ":updateMessages",
+            prompt: ":parent_prompt",
+          },
+          console: { after: true },
+          isResult: true,
+        },
+      },
+    };
+
+    const judgeRssNeedGraph: GraphData = {
       version: 2.0,
       nodes: {
         judgeRssNeed: {
@@ -167,25 +344,53 @@ export class CreateScriptUseCase {
               judgeRssNeedFormat,
               "judgeRssNeed"
             ),
+            messages: [
+              {
+                role: "system",
+                content: judgeRssNeedPrompt,
+              },
+            ],
           },
           inputs: {
-            messages: ":parent_messages",
             prompt: ":parent_prompt",
           },
         },
-        ifRss: {
+        consoleRssNeed: {
+          agent: "consoleAgent",
+          inputs: {
+            text: "isRss: ${:judgeRssNeed.text}",
+          },
+        },
+        rssNeedParser: {
           agent: (namedInputs) => {
             const { judgeRssNeed } = namedInputs;
 
             try {
               const judgeRssNeedObject = JSON.parse(judgeRssNeed);
-              return judgeRssNeedObject.rssNeed;
+              return judgeRssNeedObject;
             } catch (error) {
               throw new Error("Failed to parse judgeRssNeed");
             }
           },
           inputs: { judgeRssNeed: ":judgeRssNeed.text" },
+          isResult: true,
         },
+        ifRss: {
+          agent: (namedInputs) => {
+            const { rssData } = namedInputs;
+
+            return rssData.rssNeed;
+          },
+          inputs: { rssData: ":rssNeedParser" },
+          isResult: true,
+        },
+      },
+    };
+
+    // graphAIのanyInputの挙動が改善されたら、extractも含めたい
+    const webSearchGraph: GraphData = {
+      version: 2.0,
+      nodes: {
         generateWebSearchQuery: {
           agent: "customOpenaiAgent",
           params: {
@@ -200,7 +405,6 @@ export class CreateScriptUseCase {
             messages: ":parent_webSearchQuery",
             prompt: ":parent_prompt",
           },
-          unless: ":ifRss",
         },
         convertWebSearchQuery: {
           agent: (namedInputs) => {
@@ -296,86 +500,6 @@ export class CreateScriptUseCase {
       },
     };
 
-    const extractGraph: GraphData = {
-      version: 2.0,
-      nodes: {
-        webExtract: {
-          agent: "tavilyExtractAgent",
-          params: {
-            apiKey: process.env.TAVILY_API_KEY,
-            extract_depth: "basic",
-            format: "markdown",
-            timeout: 10000,
-          },
-          inputs: {
-            urls: ":parent_reference",
-          },
-        },
-        outputWebSearchResult: {
-          agent: (namedInputs) => {
-            const { webSearchResult } = namedInputs;
-
-            const webSearchUrls = webSearchResult.results?.map((r: any) => {
-              return {
-                url: r.url,
-                title: r.title ?? "",
-              };
-            });
-
-            return webSearchUrls;
-          },
-          inputs: {
-            webSearchResult: ":webExtract",
-          },
-          isResult: true,
-        },
-        updateMessages: {
-          agent: (namedInputs) => {
-            const { webSearchResult, messages } = namedInputs;
-
-            const webSearchResultString =
-              webSearchResult.results
-                ?.map((r: any) =>
-                  JSON.stringify({
-                    title: r.title,
-                    content: r.raw_content,
-                  })
-                )
-                .join("\n\n") ?? "";
-
-            const newMessage = {
-              role: "system",
-              content: generatewebSearchUserPrompt(
-                messages,
-                webSearchResultString
-              ),
-            };
-            messages.push(newMessage);
-
-            return messages;
-          },
-          inputs: {
-            messages: ":parent_messages",
-            webSearchResult: ":webExtract",
-          },
-        },
-        summarizellm: {
-          agent: "customOpenaiAgent",
-          params: {
-            model: "gpt-4.1",
-            apiKey: process.env.OPENAI_API_KEY,
-            response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
-          },
-          inputs: {
-            messages: ":updateMessages",
-            prompt: ":parent_prompt",
-          },
-          console: { after: true },
-          isResult: true,
-        },
-      },
-    };
-
     const createScriptGraph: GraphData = {
       version: 2.0,
       nodes: {
@@ -415,16 +539,6 @@ export class CreateScriptUseCase {
           inputs: { reference: ":reference" },
           if: ":isSearch",
         },
-        webSearchGraph: {
-          agent: "nestedAgent",
-          inputs: {
-            parent_messages: ":messages",
-            parent_prompt: ":promptInput",
-            parent_webSearchQuery: ":generateWebSearchQueryPrompt",
-          },
-          graph: webSearchGraph,
-          unless: ":referenceCheck",
-        },
         webExtractGraph: {
           agent: "nestedAgent",
           inputs: {
@@ -435,6 +549,34 @@ export class CreateScriptUseCase {
           graph: extractGraph,
           if: ":referenceCheck",
         },
+        rssNeedCheck: {
+          agent: "nestedAgent",
+          inputs: {
+            parent_prompt: ":promptInput",
+          },
+          graph: judgeRssNeedGraph,
+          unless: ":referenceCheck",
+        },
+        webSearchGraph: {
+          agent: "nestedAgent",
+          inputs: {
+            parent_messages: ":messages",
+            parent_prompt: ":promptInput",
+            parent_webSearchQuery: ":generateWebSearchQueryPrompt",
+          },
+          graph: webSearchGraph,
+          unless: ":rssNeedCheck.ifRss",
+        },
+        rssExtractGraph: {
+          agent: "nestedAgent",
+          inputs: {
+            parent_messages: ":messages",
+            parent_prompt: ":promptInput",
+            parent_rssFieldAndKeywords: ":rssNeedCheck.rssNeedParser",
+          },
+          graph: rssExtractGraph,
+          if: ":rssNeedCheck.ifRss",
+        },
         output: {
           agent: "copyAgent",
           anyInput: true,
@@ -443,6 +585,7 @@ export class CreateScriptUseCase {
               ":llm.text",
               ":webSearchGraph.summarizellm.text",
               ":webExtractGraph.summarizellm.text",
+              ":rssExtractGraph.summarizellm.text",
             ],
           },
           isResult: true,
@@ -454,10 +597,31 @@ export class CreateScriptUseCase {
             url: [
               ":webSearchGraph.outputWebSearchResult",
               ":webExtractGraph.outputWebSearchResult",
+              ":rssExtractGraph.outputWebSearchResult",
             ],
           },
           isResult: true,
           if: ":isSearch",
+        },
+        console1: {
+          agent: (namedInputs) => {
+            const { rssExtract } = namedInputs;
+            console.log("rssExtracttt:", rssExtract);
+            return rssExtract;
+          },
+          inputs: {
+            rssExtract: ":webSearchGraph",
+          },
+        },
+        console2: {
+          agent: (namedInputs) => {
+            const { rssExtract } = namedInputs;
+            console.log("rssExtracttt:", rssExtract);
+            return rssExtract;
+          },
+          inputs: {
+            rssExtract: ":webExtractGraph",
+          },
         },
       },
     };
@@ -467,6 +631,8 @@ export class CreateScriptUseCase {
       customOpenaiAgent,
       tavilySearchAgent,
       tavilyExtractAgent,
+      rssReaderAgent,
+      htmlArticleExtractorAgent,
     });
     graphAI.injectValue("promptInput", request.prompt);
     graphAI.injectValue("isSearch", isSearch);

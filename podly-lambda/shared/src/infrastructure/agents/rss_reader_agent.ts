@@ -4,7 +4,7 @@ import { AgentFunction, AgentFunctionInfo } from "graphai";
 type RSSInputs = {
   feedUrls: string[]; // RSSフィードURLの配列
   keywords?: string[]; // 任意の検索キーワード（例: ["日本", "経済"]）
-  maxItems?: number; // 取得する最大件数（デフォルト10件）
+  maxItems?: number; // 取得する最大件数（デフォルト5件）
 };
 
 type RSSResult = {
@@ -14,11 +14,13 @@ type RSSResult = {
   contentSnippet?: string;
 }[];
 
-export const rssAgent: AgentFunction<RSSInputs, RSSResult> = async ({
-  params,
-}) => {
+export const rssReaderAgent: AgentFunction<
+  RSSInputs,
+  RSSResult,
+  RSSInputs
+> = async ({ namedInputs }) => {
   const parser = new Parser();
-  const { feedUrls, keywords = [], maxItems = 10 } = params;
+  const { feedUrls, keywords = [], maxItems = 5 } = namedInputs;
 
   const allItems: RSSResult = [];
 
@@ -36,7 +38,6 @@ export const rssAgent: AgentFunction<RSSInputs, RSSResult> = async ({
           title: item.title ?? "",
           link: item.link ?? "",
           pubDate: item.pubDate,
-          contentSnippet: item.contentSnippet,
         }));
 
       allItems.push(...filteredItems);
@@ -48,10 +49,10 @@ export const rssAgent: AgentFunction<RSSInputs, RSSResult> = async ({
   return allItems;
 };
 
-export const rssAgentInfo: AgentFunctionInfo = {
-  name: "rssAgent",
-  agent: rssAgent,
-  mock: rssAgent,
+export const rssReaderAgentInfo: AgentFunctionInfo = {
+  name: "rssReaderAgent",
+  agent: rssReaderAgent,
+  mock: rssReaderAgent,
   description:
     "RSS フィードを横断的に取得し、キーワードでフィルタリングして最新順に返すエージェント",
   category: ["data"],
@@ -102,3 +103,5 @@ export const rssAgentInfo: AgentFunctionInfo = {
   repository: "",
   license: "",
 };
+
+export default rssReaderAgentInfo;

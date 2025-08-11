@@ -65,8 +65,7 @@ export class AudioPreviewUseCase {
       (element as any).filename = filename + index;
     });
 
-    let ttsApiKey: string;
-    ttsApiKey = process.env.OPENAI_API_KEY ?? "";
+    const ttsApiKey = process.env.OPENAI_API_KEY ?? "";
 
     let podcasterConcurrency = 8;
     let ttsAgent: string;
@@ -337,15 +336,14 @@ export class AudioPreviewUseCase {
               console.log("uploadResults:", uploadResults);
               console.log("separatedAudioResults:", separatedAudioResults);
 
-              // TODO CloudFrontで配信する署名付きURLを生成する
-              const fullAudioUrl = uploadResults.map(
-                (result: any) => result.url
-              );
+              if (uploadResults.length === 0) {
+                throw new Error("uploadResults is empty");
+              }
 
+              const fullAudioUrl = uploadResults[0].url;
               const separatedAudioUrls = separatedAudioResults.map(
                 (result: any) => result.url
               );
-
               return { fullAudioUrl, separatedAudioUrls };
             },
             inputs: {
@@ -435,18 +433,17 @@ export class AudioPreviewUseCase {
       return previewResult;
     } finally {
       // 一時保存用フォルダを削除
-      console.log("🧹 Cleaning up temporary directories...");
-      // for (const tempDir of tempDirs) {
-      //   try {
-      //     await fsPromise.rm(tempDir, { recursive: true, force: true });
-      //     console.log(`Deleted temporary directory: ${tempDir}`);
-      //   } catch (error) {
-      //     console.warn(
-      //       `Failed to delete temporary directory ${tempDir}:`,
-      //       error
-      //     );
-      //   }
-      // }
+      for (const tempDir of tempDirs) {
+        try {
+          await fsPromise.rm(tempDir, { recursive: true, force: true });
+          console.log(`Deleted temporary directory: ${tempDir}`);
+        } catch (error) {
+          console.warn(
+            `Failed to delete temporary directory ${tempDir}:`,
+            error
+          );
+        }
+      }
     }
   }
 }
