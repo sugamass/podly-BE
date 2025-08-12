@@ -424,8 +424,8 @@ export class CreateScriptUseCase {
             apiKey: process.env.TAVILY_API_KEY,
             max_results: 5,
             search_depth: "basic",
-            include_answer: false,
-            include_raw_content: "markdown",
+            include_answer: "advanced",
+            include_raw_content: false,
           },
           inputs: {
             query: ":convertWebSearchQuery",
@@ -434,8 +434,6 @@ export class CreateScriptUseCase {
         outputWebSearchResult: {
           agent: (namedInputs) => {
             const { webSearchResult } = namedInputs;
-
-            console.log("webSearchResult:", webSearchResult);
 
             const webSearchUrls = webSearchResult.results?.map((r: any) => {
               return {
@@ -455,17 +453,17 @@ export class CreateScriptUseCase {
           agent: (namedInputs) => {
             const { messages, webSearchResult } = namedInputs;
 
-            console.log("webSearchResult2:", webSearchResult);
+            // const webSearchResultString =
+            //   webSearchResult.results
+            //     ?.map((r: any) =>
+            //       JSON.stringify({
+            //         title: r.title,
+            //         content: r.raw_content,
+            //       })
+            //     )
+            //     .join("\n\n") ?? "";
 
-            const webSearchResultString =
-              webSearchResult.results
-                ?.map((r: any) =>
-                  JSON.stringify({
-                    title: r.title,
-                    content: r.raw_content,
-                  })
-                )
-                .join("\n\n") ?? "";
+            const webSearchResultString = webSearchResult.answer;
 
             const newMessage = {
               role: "system",
@@ -562,7 +560,7 @@ export class CreateScriptUseCase {
           inputs: {
             parent_messages: ":messages",
             parent_prompt: ":promptInput",
-            parent_webSearchQuery: ":generateWebSearchQueryPrompt",
+            parent_webSearchQuery: ":generateWebSearchQueryPrompt", // TODO paramsで渡せばよい
           },
           graph: webSearchGraph,
           unless: ":rssNeedCheck.ifRss",
@@ -602,26 +600,6 @@ export class CreateScriptUseCase {
           },
           isResult: true,
           if: ":isSearch",
-        },
-        console1: {
-          agent: (namedInputs) => {
-            const { rssExtract } = namedInputs;
-            console.log("rssExtracttt:", rssExtract);
-            return rssExtract;
-          },
-          inputs: {
-            rssExtract: ":webSearchGraph",
-          },
-        },
-        console2: {
-          agent: (namedInputs) => {
-            const { rssExtract } = namedInputs;
-            console.log("rssExtracttt:", rssExtract);
-            return rssExtract;
-          },
-          inputs: {
-            rssExtract: ":webExtractGraph",
-          },
         },
       },
     };

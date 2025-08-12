@@ -14,7 +14,7 @@ type TavilySearchParams = {
   apiKey?: string;
   max_results?: number;
   search_depth?: "basic" | "advanced";
-  include_answer?: boolean;
+  include_answer?: boolean | "basic" | "advanced";
   include_raw_content?: boolean | "markdown" | "text";
 };
 
@@ -38,6 +38,8 @@ export const tavilySearchAgent: AgentFunction<
   DefaultConfigData
 > = async ({ namedInputs, params, config }) => {
   const { query } = namedInputs;
+
+  console.log("search query:", query);
 
   assert(
     !!query,

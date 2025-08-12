@@ -101,7 +101,7 @@ export const webSearchQueryPrompt = `
 <例>
 出力例:
 {{
-"query": "machine learning transformer architecture explained",
+"query": "machine learning transformer architecture",
 }}
 </例>
 
@@ -153,20 +153,21 @@ export const generatewebSearchUserPrompt = (
 
 export const judgeRssNeedPrompt = `
 次に与えるユーザープロンプトに対して、RSSを使用する必要があるかどうかを判断してください。
+ある領域（政治、科学など）の広範なニュースを取得する場合はRSSを使用する必要があります。「AIの最新情報」といった特定のテーマに関するニュースを取得する場合はRSSを使用する必要はありません。
+
 
 <フォーマット>
 レスポンスは、以下のキーを含むJSONオブジェクトとしてフォーマットしてください。
 - "rssNeed": 必要な場合はtrue、不要な場合はfalse
 - "field": RSSフィードのジャンル。選択肢は、general, social, technology, politics, economy, sports, world, entertainment。RSS不使用の場合はnull。
-- "keywords": 取得対象記事の限定的なキーワード（例: "AI", "関税"）。一般的な語（例: "最新", "研究"）は避けること。キーワード未指定の場合、[]。
 </フォーマット>
 
 <例>
+入力例：「今日のニュースをまとめて」
 出力例:
 {
 "rssNeed": true,
-"field": "technology",
-"keywords": ["AI"]
+"field": "general",
 }
 </例>
 `;

@@ -6,7 +6,7 @@ const { createScript: handler } = require("./dist/index.js");
 
 // テストリクエストを読み込み
 const testRequest = {
-  prompt: "最新のAIの研究事情をまとめて",
+  prompt: "昨日の経済ニュースをまとめて",
   reference: [
     // {
     //   title: "",
