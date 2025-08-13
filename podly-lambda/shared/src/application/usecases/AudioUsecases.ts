@@ -33,6 +33,24 @@ interface PodcastScript {
 }
 
 /**
+ * 一時ディレクトリを安全に削除するユーティリティ関数
+ * @param tempDirs 削除対象のディレクトリパス配列
+ */
+async function cleanupTempDirectories(tempDirs: string[]): Promise<void> {
+  for (const tempDir of tempDirs) {
+    try {
+      await fsPromise.rm(tempDir, { recursive: true, force: true });
+      console.log(`🗑️ Deleted temporary directory: ${tempDir}`);
+    } catch (error) {
+      console.warn(
+        `⚠️ Failed to delete temporary directory ${tempDir}:`,
+        error
+      );
+    }
+  }
+}
+
+/**
  * 音声プレビューUseCase
  */
 export class AudioPreviewUseCase {
@@ -399,7 +417,14 @@ export class AudioPreviewUseCase {
       podcastGraph.injectValue("script", podcastScript);
       podcastGraph.injectValue("isLambda", isLambda);
 
-      const graphResult = await podcastGraph.run();
+      let graphResult: any;
+      try {
+        graphResult = await podcastGraph.run();
+      } catch (error) {
+        console.error("💥 Error in AudioPreviewUseCase:", error);
+        await cleanupTempDirectories(tempDirs);
+        throw error;
+      }
 
       let separatedAudioUrls: string[] = [];
       let fullAudioUrl = "";
@@ -433,17 +458,7 @@ export class AudioPreviewUseCase {
       return previewResult;
     } finally {
       // 一時保存用フォルダを削除
-      for (const tempDir of tempDirs) {
-        try {
-          await fsPromise.rm(tempDir, { recursive: true, force: true });
-          console.log(`Deleted temporary directory: ${tempDir}`);
-        } catch (error) {
-          console.warn(
-            `Failed to delete temporary directory ${tempDir}:`,
-            error
-          );
-        }
-      }
+      await cleanupTempDirectories(tempDirs);
     }
   }
 }
