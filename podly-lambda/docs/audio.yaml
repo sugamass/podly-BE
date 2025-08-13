@@ -104,6 +104,13 @@ components:
           type: string
           x-stoplight:
             id: bgm1id2345
+        model:
+          type: string
+          enum:
+            - gpt-4o-mini-tts
+            - tts-1
+          x-stoplight:
+            id: model123456
     AudioPreviewResponse:
       title: AudioPreviewResponse
       x-stoplight:

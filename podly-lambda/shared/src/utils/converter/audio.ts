@@ -18,6 +18,7 @@ interface AudioPreviewRequest {
   speakers: string[];
   scriptId?: string;
   bgmId?: string;
+  model?: string;
 }
 
 interface AudioPreviewResponse {
@@ -37,6 +38,7 @@ export function convertAudioPreviewApiRequestToDomainInput(
     speakers: apiRequest.speakers,
     scriptId: apiRequest.scriptId ?? "",
     bgmId: apiRequest.bgmId,
+    model: apiRequest.model ?? "tts-1",
   };
 }
 

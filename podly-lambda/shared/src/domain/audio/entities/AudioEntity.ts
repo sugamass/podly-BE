@@ -13,6 +13,7 @@ export interface AudioPreviewUseCaseInput {
   speakers: string[];
   scriptId: string;
   bgmId?: string;
+  model?: string;
 }
 
 export interface AudioPreviewUseCaseOutput {
@@ -22,4 +23,4 @@ export interface AudioPreviewUseCaseOutput {
 }
 
 // TTSプロバイダー型
-export type TTSProvider = "openai" | "elevenlabs" | "azure" | "google";
+export type TTSProvider = "openai" | "google";

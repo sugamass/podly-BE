@@ -31,25 +31,20 @@ export const createPreviewAudio = async (
     // リクエストボディの検証
     if (!event.body) {
       console.log("❌ Request body is missing");
-      return new ValidationError(
-        "Request body is required",
-        [{ path: "body", message: "Request body is required" }]
-      ).toApiResponse();
+      return new ValidationError("Request body is required", [
+        { path: "body", message: "Request body is required" },
+      ]).toApiResponse();
     }
 
     let rawRequest: unknown;
     try {
       rawRequest = JSON.parse(event.body);
-      console.log(
-        "📝 Parsed request:",
-        JSON.stringify(rawRequest, null, 2)
-      );
+      console.log("📝 Parsed request:", JSON.stringify(rawRequest, null, 2));
     } catch (error) {
       console.log("❌ JSON parse error:", error);
-      return new ValidationError(
-        "Invalid JSON format",
-        [{ path: "body", message: "Invalid JSON format" }]
-      ).toApiResponse();
+      return new ValidationError("Invalid JSON format", [
+        { path: "body", message: "Invalid JSON format" },
+      ]).toApiResponse();
     }
 
     // OpenAPIスキーマに基づくバリデーション
@@ -57,7 +52,10 @@ export const createPreviewAudio = async (
     try {
       apiRequest = SchemaValidator.validateAudioPreviewRequest(rawRequest);
       console.log("✅ Request validation passed");
-      console.log("📝 Validated API Request:", JSON.stringify(apiRequest, null, 2));
+      console.log(
+        "📝 Validated API Request:",
+        JSON.stringify(apiRequest, null, 2)
+      );
     } catch (error) {
       console.log("❌ Request validation failed:", error);
       if (error instanceof ValidationError) {
@@ -66,7 +64,13 @@ export const createPreviewAudio = async (
       }
       return new ValidationError(
         error instanceof Error ? error.message : "Validation failed",
-        [{ path: "unknown", message: error instanceof Error ? error.message : "Validation failed" }]
+        [
+          {
+            path: "unknown",
+            message:
+              error instanceof Error ? error.message : "Validation failed",
+          },
+        ]
       ).toApiResponse();
     }
 
@@ -75,22 +79,27 @@ export const createPreviewAudio = async (
     console.log("🔄 Domain Input:", JSON.stringify(domainInput, null, 2));
 
     // ビジネスロジック実行
-    console.log("⚡ Executing AudioPreviewUseCase...");
     const domainOutput = await audioPreviewUseCase.execute(domainInput);
-    console.log("✅ UseCase execution completed");
     console.log("📤 Domain Output:", JSON.stringify(domainOutput, null, 2));
 
     // API レスポンスへの変換
     const rawApiResponse: AudioPreviewResponse =
       convertAudioPreviewDomainOutputToApiResponse(domainOutput);
-    console.log("🔄 Raw API Response:", JSON.stringify(rawApiResponse, null, 2));
+    console.log(
+      "🔄 Raw API Response:",
+      JSON.stringify(rawApiResponse, null, 2)
+    );
 
     // レスポンスのバリデーション
     let apiResponse: AudioPreviewResponse;
     try {
-      apiResponse = SchemaValidator.validateAudioPreviewResponse(rawApiResponse);
+      apiResponse =
+        SchemaValidator.validateAudioPreviewResponse(rawApiResponse);
       console.log("✅ Response validation passed");
-      console.log("🎯 Final API Response:", JSON.stringify(apiResponse, null, 2));
+      console.log(
+        "🎯 Final API Response:",
+        JSON.stringify(apiResponse, null, 2)
+      );
     } catch (error) {
       console.error("❌ Response validation failed:", error);
       if (error instanceof ValidationError) {

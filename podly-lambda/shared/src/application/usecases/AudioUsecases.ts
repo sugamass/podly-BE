@@ -141,8 +141,8 @@ export class AudioPreviewUseCase {
     // 一時フォルダのパスを配列で管理（削除用）
     const tempDirs = [separatedMp3Dir, fullMp3Dir, fullHlsDir];
 
-    // TODO gpt-4o-mini-ttsに対応させる
-    const openaiTtsModel = "tts-1"; // 標準モデル
+    // リクエストからmodelを取得、デフォルトはtts-1
+    const openaiTtsModel = request.model ?? "tts-1";
 
     try {
       const podcastScript: PodcastScript = {

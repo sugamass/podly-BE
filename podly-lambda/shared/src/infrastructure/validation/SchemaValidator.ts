@@ -52,6 +52,7 @@ export const AudioPreviewRequestSchema = z.object({
   speakers: z.array(z.string()),
   scriptId: z.string().optional(),
   bgmId: z.string().optional(),
+  model: z.enum(["gpt-4o-mini-tts", "tts-1"]).optional(),
 });
 
 export const AudioPreviewResponseSchema = z.object({

@@ -20,6 +20,7 @@ const testEvent = {
     speakers: ["Teacher", "Student"],
     scriptId: "podcast-ai-discussion-001",
     bgmId: "calmMind", // カスタムBGMを指定
+    model: "gpt-4o-mini-tts",
   }),
   headers: {
     "Content-Type": "application/json",

@@ -22,8 +22,6 @@ export const ttsOpenaiAgent: AgentFunction<
   const { apiKey, model, voice, instructions, supressError } = params;
   const openai = new OpenAI({ apiKey });
 
-  console.log("input voice:", voice);
-
   try {
     const modelName = model ?? "tts-1";
     const requestConfig: any = {
