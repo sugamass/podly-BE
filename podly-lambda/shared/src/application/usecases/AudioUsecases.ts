@@ -117,11 +117,12 @@ export class AudioPreviewUseCase {
       "tmp_separated_mp3"
     );
     // ビートごとのmp3ファイルをHLSに変換したファイルを保存するフォルダ
-    const separatedHlsDir = path.join(
-      basePath,
-      request.scriptId,
-      "tmp_separated_hls"
-    );
+    // const separatedHlsDir = path.join(
+    //   basePath,
+    //   request.scriptId,
+    //   "tmp_separated_hls"
+    // );
+
     // 音声ファイルを結合した一時保存用フォルダ
     const fullMp3Dir = path.join(basePath, request.scriptId, "tmp_full_mp3");
     // ローカル用HLSファイル保存フォルダ
@@ -132,13 +133,13 @@ export class AudioPreviewUseCase {
     // Lambda環境では必要なディレクトリを作成
 
     await fsPromise.mkdir(separatedMp3Dir, { recursive: true });
-    await fsPromise.mkdir(separatedHlsDir, { recursive: true });
+    // await fsPromise.mkdir(separatedHlsDir, { recursive: true });
     await fsPromise.mkdir(fullMp3Dir, { recursive: true });
     await fsPromise.mkdir(fullHlsDir, { recursive: true });
     await fsPromise.mkdir(musicDir, { recursive: true });
 
     // 一時フォルダのパスを配列で管理（削除用）
-    const tempDirs = [separatedMp3Dir, separatedHlsDir, fullMp3Dir, fullHlsDir];
+    const tempDirs = [separatedMp3Dir, fullMp3Dir, fullHlsDir];
 
     // TODO gpt-4o-mini-ttsに対応させる
     const openaiTtsModel = "tts-1"; // 標準モデル
@@ -208,27 +209,27 @@ export class AudioPreviewUseCase {
             },
             isResult: true,
           },
-          convertData: {
-            agent: "createDataForHlsAgent",
-            params: {
-              outputDir: separatedHlsDir,
-            },
-            inputs: {
-              inputFilePath: ":writeFile.outputFilePath",
-              outputBaseName: ":row.filename",
-            },
-          },
-          waitForHls: {
-            agent: "waitForFileAgent",
-            params: {
-              outputDir: separatedHlsDir,
-            },
-            inputs: {
-              fileName: "${:row.filename}.m3u8",
-              waitFor: ":convertData",
-            },
-            isResult: true,
-          },
+          // convertData: {
+          //   agent: "createDataForHlsAgent",
+          //   params: {
+          //     outputDir: separatedHlsDir,
+          //   },
+          //   inputs: {
+          //     inputFilePath: ":writeFile.outputFilePath",
+          //     outputBaseName: ":row.filename",
+          //   },
+          // },
+          // waitForHls: {
+          //   agent: "waitForFileAgent",
+          //   params: {
+          //     outputDir: separatedHlsDir,
+          //   },
+          //   inputs: {
+          //     fileName: "${:row.filename}.m3u8",
+          //     waitFor: ":convertData",
+          //   },
+          //   isResult: true,
+          // },
         },
       };
 
@@ -241,19 +242,19 @@ export class AudioPreviewUseCase {
             inputs: { rows: ":script.script", script: ":script" },
             graph: graphTts,
           },
-          uploadSeparatedAudio: {
-            agent: "uploadS3Agent",
-            params: {
-              isLambda: isLambda,
-            },
-            inputs: {
-              directoryPath: separatedHlsDir,
-              s3Prefix: "tmp_separated_hls",
-              // 待機用
-              waitFor: ":map",
-            },
-            isResult: true,
-          },
+          // uploadSeparatedAudio: {
+          //   agent: "uploadS3Agent",
+          //   params: {
+          //     isLambda: isLambda,
+          //   },
+          //   inputs: {
+          //     directoryPath: separatedHlsDir,
+          //     s3Prefix: "tmp_separated_hls",
+          //     // 待機用
+          //     waitFor: ":map",
+          //   },
+          //   isResult: true,
+          // },
           combineFiles: {
             agent: "combineFilesAgent",
             params: {
@@ -349,58 +350,28 @@ export class AudioPreviewUseCase {
           // TODO：署名付きURLを生成するエージェントを作成する
           output: {
             agent: (namedInputs: any) => {
-              const { uploadResults, separatedAudioResults } = namedInputs;
+              const { uploadResults } = namedInputs;
 
               console.log("uploadResults:", uploadResults);
-              console.log("separatedAudioResults:", separatedAudioResults);
 
               if (uploadResults.length === 0) {
                 throw new Error("uploadResults is empty");
               }
 
               const fullAudioUrl = uploadResults[0].url;
-              const separatedAudioUrls = separatedAudioResults.map(
-                (result: any) => result.url
-              );
-              return { fullAudioUrl, separatedAudioUrls };
+
+              return { fullAudioUrl };
             },
             inputs: {
               uploadResults: ":uploadFullAudio.results",
-              separatedAudioResults:
-                ":aiPodcaster.uploadSeparatedAudio.results",
+              // separatedAudioResults:
+              //   ":aiPodcaster.uploadSeparatedAudio.results",
               waitfor: ":waitForOutput",
             },
             isResult: true,
           },
         },
       };
-
-      // // bufferをファイルに書き込むエージェントフィルター
-      // const fileCacheAgentFilter: AgentFilterFunction = async (context, next) => {
-      //   const { namedInputs } = context;
-      //   const { file } = namedInputs;
-
-      //   // キャッシュの有無に関係なく next を実行して buffer を取得
-      //   const output = (await next(context)) as Record<string, any>;
-      //   const buffer = output ? output["buffer"] : undefined;
-
-      //   if (buffer) {
-      //     console.log("writing: " + file);
-      //     await fsPromise.writeFile(file, buffer);
-      //     return true;
-      //   }
-
-      //   console.log("no buffer returned: " + file);
-      //   return false;
-      // };
-
-      // const agentFilters = [
-      //   {
-      //     name: "fileCacheAgentFilter",
-      //     agent: fileCacheAgentFilter,
-      //     nodeIds: ["tts"],
-      //   },
-      // ];
 
       const podcastGraph = new GraphAI(podcastGraphData, {
         ...agents,
@@ -426,7 +397,6 @@ export class AudioPreviewUseCase {
         throw error;
       }
 
-      let separatedAudioUrls: string[] = [];
       let fullAudioUrl = "";
 
       for (const [_, value] of Object.entries(graphResult)) {
@@ -434,9 +404,7 @@ export class AudioPreviewUseCase {
           for (const [key2, value2] of Object.entries(
             value as Record<string, any>
           )) {
-            if (key2 == "separatedAudioUrls") {
-              separatedAudioUrls = value2 as string[];
-            } else if (key2 == "fullAudioUrl") {
+            if (key2 == "fullAudioUrl") {
               fullAudioUrl = value2 as string;
             }
           }
@@ -449,7 +417,7 @@ export class AudioPreviewUseCase {
       // 実際の音声生成結果を返す
       const previewResult: AudioPreviewUseCaseOutput = {
         audioUrl: finalAudioUrl,
-        separatedAudioUrls: separatedAudioUrls,
+        separatedAudioUrls: [], // TODO APIスキーマ更新後、削除
         scriptId: request.scriptId,
       };
 
