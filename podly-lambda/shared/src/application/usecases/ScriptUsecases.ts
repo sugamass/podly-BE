@@ -89,27 +89,27 @@ export class CreateScriptUseCase {
       },
       {
         field: "technology",
-        urls: ["https://www.nhk.or.jp/rss/news/cat2.xml"],
-      },
-      {
-        field: "politics",
         urls: ["https://www.nhk.or.jp/rss/news/cat3.xml"],
       },
       {
-        field: "economy",
+        field: "politics",
         urls: ["https://www.nhk.or.jp/rss/news/cat4.xml"],
       },
       {
-        field: "world",
+        field: "economy",
         urls: ["https://www.nhk.or.jp/rss/news/cat5.xml"],
       },
       {
-        field: "sports",
+        field: "world",
         urls: ["https://www.nhk.or.jp/rss/news/cat6.xml"],
       },
       {
-        field: "entertainment",
+        field: "sports",
         urls: ["https://www.nhk.or.jp/rss/news/cat7.xml"],
+      },
+      {
+        field: "entertainment",
+        urls: ["https://www.nhk.or.jp/rss/news/cat2.xml"],
       },
     ];
 
@@ -179,8 +179,8 @@ export class CreateScriptUseCase {
               webSearchResult.results
                 ?.map((r: any) =>
                   JSON.stringify({
-                    title: r.title,
-                    content: r.raw_content,
+                    title: r.title ?? "",
+                    content: r.rawContent,
                   })
                 )
                 .join("\n\n") ?? "";
@@ -458,7 +458,7 @@ export class CreateScriptUseCase {
             //     ?.map((r: any) =>
             //       JSON.stringify({
             //         title: r.title,
-            //         content: r.raw_content,
+            //         content: r.rawContent,
             //       })
             //     )
             //     .join("\n\n") ?? "";

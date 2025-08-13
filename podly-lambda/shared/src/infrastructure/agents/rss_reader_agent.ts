@@ -20,7 +20,7 @@ export const rssReaderAgent: AgentFunction<
   RSSInputs
 > = async ({ namedInputs }) => {
   const parser = new Parser();
-  const { feedUrls, keywords = [], maxItems = 5 } = namedInputs;
+  const { feedUrls, keywords = [], maxItems = 8 } = namedInputs;
 
   const allItems: RSSResult = [];
 
