@@ -36,7 +36,7 @@ resource "aws_lambda_function" "create_script" {
   role            = var.lambda_execution_role_arn
   handler         = "index.createScript"
   runtime         = "nodejs18.x"
-  timeout         = 30
+  timeout         = 900
   memory_size     = 512
 
   environment {

@@ -43,10 +43,11 @@ module.exports = {
     canvas: "canvas",
     bufferutil: "bufferutil",
     "utf-8-validate": "utf-8-validate",
+    undici: "undici",
   },
   plugins: [
     new webpack.IgnorePlugin({
-      resourceRegExp: /^(canvas|bufferutil|utf-8-validate)$/,
+      resourceRegExp: /^(canvas|bufferutil|utf-8-validate|undici)$/,
     }),
     new webpack.IgnorePlugin({
       resourceRegExp: /^(fsevents)$/,
