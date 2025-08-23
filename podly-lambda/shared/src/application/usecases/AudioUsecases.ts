@@ -323,6 +323,7 @@ export class AudioPreviewUseCase {
               isLambda: ":isLambda",
             },
             graph: graphPodcaster,
+            isResult: true,
           },
           convertData: {
             agent: "createDataForHlsAgent",
@@ -359,7 +360,7 @@ export class AudioPreviewUseCase {
           // TODO：署名付きURLを生成するエージェントを作成する
           output: {
             agent: (namedInputs: any) => {
-              const { uploadResults } = namedInputs;
+              const { uploadResults, duration } = namedInputs;
 
               console.log("uploadResults:", uploadResults);
 
@@ -369,13 +370,14 @@ export class AudioPreviewUseCase {
 
               const fullAudioUrl = uploadResults[0].url;
 
-              return { fullAudioUrl };
+              return { fullAudioUrl, duration };
             },
             inputs: {
               uploadResults: ":uploadFullAudio.results",
               // separatedAudioResults:
               //   ":aiPodcaster.uploadSeparatedAudio.results",
               waitfor: ":waitForOutput",
+              duration: ":aiPodcaster.addBGM.duration",
             },
             isResult: true,
           },
@@ -408,6 +410,7 @@ export class AudioPreviewUseCase {
       }
 
       let fullAudioUrl = "";
+      let audioDuration: number | undefined = undefined;
 
       for (const [_, value] of Object.entries(graphResult)) {
         if (typeof value === "object" && value !== null) {
@@ -416,6 +419,9 @@ export class AudioPreviewUseCase {
           )) {
             if (key2 == "fullAudioUrl") {
               fullAudioUrl = value2 as string;
+            }
+            if (key2 == "duration") {
+              audioDuration = value2 as number;
             }
           }
         }
@@ -429,6 +435,7 @@ export class AudioPreviewUseCase {
         audioUrl: finalAudioUrl,
         separatedAudioUrls: [], // TODO APIスキーマ更新後、削除
         scriptId: request.scriptId,
+        duration: audioDuration,
       };
 
       console.log("previewResult:", previewResult);
@@ -436,7 +443,7 @@ export class AudioPreviewUseCase {
       return previewResult;
     } finally {
       // 一時保存用フォルダを削除
-      // await cleanupTempDirectories(tempDirs);
+      await cleanupTempDirectories(tempDirs);
     }
   }
 }

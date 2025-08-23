@@ -13,6 +13,26 @@ if (process.env.FFPROBE_PATH) {
   ffmpeg.setFfprobePath(process.env.FFPROBE_PATH);
 }
 
+// 秒を小数3桁で丸め
+const round3 = (n: number) => Math.round(n * 1000) / 1000;
+
+// ffprobeで再生時間を取得（秒）
+function probeDurationSec(filePath: string): Promise<number> {
+  return new Promise((resolve) => {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err || !metadata?.format?.duration) {
+        console.warn(
+          "[warn] ffprobe failed or no duration meta:",
+          err?.message
+        );
+        return resolve(0);
+      }
+      const sec = Number(metadata.format.duration);
+      resolve(Number.isFinite(sec) ? sec : 0);
+    });
+  });
+}
+
 const addBGMAgent: AgentFunction<
   { musicDir: string },
   { outputFilePath: string },
@@ -31,7 +51,7 @@ const addBGMAgent: AgentFunction<
     process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT;
 
   // BGMファイル名を決定（デフォルトは StarsBeyondEx.mp3）
-  const bgmFileName = bgmId ? `${bgmId}.mp3` : "StarsBeyondEx.mp3";
+  const bgmFileName = bgmId ? `${bgmId}.mp3` : "starsBeyondEx.mp3";
 
   let musicFilePath: string;
   if (isLambda) {
@@ -50,52 +70,14 @@ const addBGMAgent: AgentFunction<
     musicFilePath = path.join(musicDir, bgmFileName);
   }
 
-  // const promise = new Promise((resolve, reject) => {
-  //   ffmpeg.ffprobe(voiceFile, (err, metadata) => {
-  //     if (err) {
-  //       console.error("Error getting metadata: " + err.message);
-  //       return reject(err);
-  //     }
+  // まず音声（ナレーション）側の長さを取得
+  const speechDurationSec = await probeDurationSec(voiceFilePath);
 
-  //     const speechDuration = metadata.format.duration;
-  //     const padding = script.padding ?? 4000; // msec
-  //     const totalDuration =
-  //       (padding * 2) / 1000 + Math.round(speechDuration ?? 0);
-  //     console.log("totalDuration:", speechDuration, totalDuration);
+  // paddingはミリ秒指定 → 秒に変換して合成時間の計画値を計算
+  const paddingMs = script.padding ?? 4000; // msec
+  const paddingSec = paddingMs / 1000;
+  const plannedDurationSec = round3((speechDurationSec || 0) + 2 * paddingSec);
 
-  //     const command = ffmpeg();
-  //     command
-  //       .input(musicFile)
-  //       .input(voiceFile)
-  //       .complexFilter([
-  //         // 音声に delay をかけ、音量を上げる
-  //         `[1:a]adelay=${padding}|${padding},volume=4[a1]`,
-  //         // 背景音楽の音量を下げる
-  //         `[0:a]volume=0.2[a0]`,
-  //         // 両者をミックスする
-  //         `[a0][a1]amix=inputs=2:duration=longest:dropout_transition=3[amixed]`,
-  //         // 出力をトリムする
-  //         `[amixed]atrim=start=0:end=${totalDuration}[trimmed]`,
-  //         // フェードアウトを適用し、最終出力にラベル [final] を付与
-  //         `[trimmed]afade=t=out:st=${totalDuration - padding / 1000}:d=${
-  //           padding / 1000
-  //         }[final]`,
-  //       ])
-  //       .outputOptions(["-map", "[final]"])
-  //       .on("error", (err) => {
-  //         console.error("Error: " + err.message);
-  //         reject(err);
-  //       })
-  //       .on("end", () => {
-  //         console.log("File has been created successfully");
-  //         resolve(0);
-  //       })
-  //       .save(outputFile);
-  //   });
-  // });
-  // await promise;
-
-  // return outputFile;
   try {
     await new Promise((resolve, reject) => {
       ffmpeg.ffprobe(voiceFilePath, (err, metadata) => {
@@ -145,7 +127,21 @@ const addBGMAgent: AgentFunction<
     throw error;
   }
 
-  return { outputFilePath: outputFilePath };
+  // const measured = round3(await probeDurationSec(outputFilePath));
+
+  // // 参考ログ（差分）
+  // const delta = round3(Math.abs((measured || 0) - plannedDurationSec));
+  // if (delta > 0.5) {
+  //   console.warn(
+  //     `[warn] duration mismatch: planned=${plannedDurationSec}s, measured=${measured}s, Δ=${delta}s`
+  //   );
+  // } else {
+  //   console.log(
+  //     `[ok] duration close: planned=${plannedDurationSec}s, measured=${measured}s, Δ=${delta}s`
+  //   );
+  // }
+
+  return { outputFilePath: outputFilePath, duration: plannedDurationSec };
 };
 
 const addBGMAgentInfo: AgentFunctionInfo = {

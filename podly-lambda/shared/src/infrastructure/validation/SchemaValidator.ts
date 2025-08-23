@@ -59,6 +59,7 @@ export const AudioPreviewResponseSchema = z.object({
   audioUrl: z.string().optional(),
   separatedAudioUrls: z.array(z.string()).optional(),
   scriptId: z.string().optional(),
+  duration: z.number().optional(),
 });
 
 export type PostCreateScriptRequest = z.infer<

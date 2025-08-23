@@ -133,3 +133,8 @@ components:
           type: string
           x-stoplight:
             id: t00yeucyi0p7q
+        duration:
+          type: number
+          description: Audio file duration in seconds
+          x-stoplight:
+            id: duration123456

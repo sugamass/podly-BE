@@ -20,6 +20,7 @@ export interface AudioPreviewUseCaseOutput {
   audioUrl?: string;
   separatedAudioUrls?: string[];
   scriptId?: string;
+  duration?: number;
 }
 
 // TTSプロバイダー型

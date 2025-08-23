@@ -25,6 +25,7 @@ interface AudioPreviewResponse {
   audioUrl?: string;
   separatedAudioUrls?: string[];
   scriptId?: string;
+  duration?: number;
 }
 
 // AudioPreview: API型からドメイン型への変換関数
@@ -50,6 +51,7 @@ export function convertAudioPreviewDomainOutputToApiResponse(
     audioUrl: domainOutput.audioUrl,
     separatedAudioUrls: domainOutput.separatedAudioUrls,
     scriptId: domainOutput.scriptId,
+    duration: domainOutput.duration,
   };
 }
 
