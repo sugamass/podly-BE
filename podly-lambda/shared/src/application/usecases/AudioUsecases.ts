@@ -16,6 +16,7 @@ import waitForFileAgent from "../../infrastructure/agents/wait_for_file_agent";
 import { ttsOpenaiAgent } from "@graphai/tts_openai_agent";
 import { pathUtilsAgent } from "@graphai/vanilla_node_agents";
 import customTtsOpenaiAgent from "../../infrastructure/agents/custom_tts_openai_agent";
+import ttsGeminiAgent from "../../infrastructure/agents/gemini_tts_agent";
 import uploadS3Agent from "../../infrastructure/agents/upload_s3_agent";
 
 interface PodcastScript {
@@ -83,13 +84,24 @@ export class AudioPreviewUseCase {
       (element as any).filename = filename + index;
     });
 
-    const ttsApiKey = process.env.OPENAI_API_KEY ?? "";
-
+    let ttsApiKey: string;
     let podcasterConcurrency = 8;
     let ttsAgent: string;
 
+    let ttsModel: string;
+
     request.voices = request.voices ?? ["shimmer", "echo"];
-    ttsAgent = "customTtsOpenaiAgent";
+
+    // TTSプロバイダーに基づいてエージェントとAPIキーを設定
+    if (request.tts === "google") {
+      ttsAgent = "ttsGeminiAgent";
+      ttsApiKey = process.env.GEMINI_API_KEY ?? "";
+      ttsModel = request.model ?? "gemini-2.5-flash-preview-tts";
+    } else {
+      ttsAgent = "customTtsOpenaiAgent";
+      ttsApiKey = process.env.OPENAI_API_KEY ?? "";
+      ttsModel = request.model ?? "tts-1";
+    }
 
     const voicemap = request.speakers?.reduce(
       (map: any, speaker: string, index: number) => {
@@ -141,9 +153,6 @@ export class AudioPreviewUseCase {
     // 一時フォルダのパスを配列で管理（削除用）
     const tempDirs = [separatedMp3Dir, fullMp3Dir, fullHlsDir];
 
-    // リクエストからmodelを取得、デフォルトはtts-1
-    const openaiTtsModel = request.model ?? "tts-1";
-
     try {
       const podcastScript: PodcastScript = {
         id: request.scriptId,
@@ -190,7 +199,7 @@ export class AudioPreviewUseCase {
             params: {
               throwError: true,
               apiKey: ttsApiKey,
-              model: openaiTtsModel,
+              model: ttsModel,
             },
           },
           writeFile: {
@@ -382,6 +391,7 @@ export class AudioPreviewUseCase {
         waitForFileAgent,
         pathUtilsAgent,
         customTtsOpenaiAgent,
+        ttsGeminiAgent,
         uploadS3Agent,
       });
 
@@ -426,7 +436,7 @@ export class AudioPreviewUseCase {
       return previewResult;
     } finally {
       // 一時保存用フォルダを削除
-      await cleanupTempDirectories(tempDirs);
+      // await cleanupTempDirectories(tempDirs);
     }
   }
 }

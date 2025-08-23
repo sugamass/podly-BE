@@ -28,6 +28,12 @@ variable "tavily_api_key" {
   sensitive   = true
 }
 
+variable "gemini_api_key" {
+  description = "Gemini API Key"
+  type        = string
+  sensitive   = true
+}
+
 variable "lambda_packages" {
   description = "Lambda deployment packages"
   type = object({

@@ -90,10 +90,10 @@ resource "aws_s3_bucket_public_access_block" "audio_files_pab" {
 resource "aws_s3_bucket_public_access_block" "music_files_pab" {
   bucket = aws_s3_bucket.music_files.id
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
 }
 
 # S3 bucket policy for public read access to audio files
@@ -114,6 +114,27 @@ resource "aws_s3_bucket_policy" "audio_files_policy" {
 
   depends_on = [
     aws_s3_bucket_public_access_block.audio_files_pab
+  ]
+}
+
+# S3 bucket policy for public read access to music files
+resource "aws_s3_bucket_policy" "music_files_policy" {
+  bucket = aws_s3_bucket.music_files.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = "*"
+        Action = "s3:GetObject"
+        Resource = "${aws_s3_bucket.music_files.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [
+    aws_s3_bucket_public_access_block.music_files_pab
   ]
 }
 
@@ -140,6 +161,7 @@ module "lambda" {
     STAGE           = var.environment
     OPENAI_API_KEY  = var.openai_api_key
     TAVILY_API_KEY  = var.tavily_api_key
+    GEMINI_API_KEY  = var.gemini_api_key
     FFMPEG_PATH     = "/opt/bin/ffmpeg"
     FFPROBE_PATH    = "/opt/bin/ffprobe"
     S3_BUCKET_NAME  = aws_s3_bucket.audio_files.bucket
