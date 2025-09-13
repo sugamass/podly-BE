@@ -21,6 +21,7 @@ const testEvent = {
     scriptId: "podcast-ai-discussion-001",
     bgmId: "calmMind", // カスタムBGMを指定
     model: "gemini-2.5-flash-preview-tts",
+    // model: "tts-1",
     tts: "google",
   }),
   headers: {

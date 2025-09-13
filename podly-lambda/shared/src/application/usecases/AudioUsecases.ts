@@ -206,8 +206,13 @@ export class AudioPreviewUseCase {
             agent: async (namedInputs: any) => {
               const { file, buffer } = namedInputs;
               if (buffer) {
-                await fsPromise.writeFile(file, buffer);
-                return { outputFilePath: file };
+                try {
+                  await fsPromise.writeFile(file, buffer);
+                  return { outputFilePath: file };
+                } catch (error) {
+                  console.error("Error in writeFile:", error);
+                  throw error;
+                }
               } else {
                 throw new Error("No buffer returned");
               }
@@ -405,7 +410,7 @@ export class AudioPreviewUseCase {
         graphResult = await podcastGraph.run();
       } catch (error) {
         console.error("💥 Error in AudioPreviewUseCase:", error);
-        await cleanupTempDirectories(tempDirs);
+        // await cleanupTempDirectories(tempDirs);
         throw error;
       }
 

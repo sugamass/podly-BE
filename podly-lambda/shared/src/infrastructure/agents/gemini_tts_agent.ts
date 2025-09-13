@@ -54,18 +54,20 @@ export const ttsGeminiAgent: AgentFunction<
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini TTS API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Gemini TTS API error: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
-    
+
     if (!data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
       throw new Error("No audio data received from Gemini TTS API");
     }
 
     const base64Audio = data.candidates[0].content.parts[0].inlineData.data;
     const buffer = Buffer.from(base64Audio, "base64");
-    
+
     return { buffer };
   } catch (e) {
     if (supressError) {
