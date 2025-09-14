@@ -43,6 +43,7 @@ export interface components {
     /** PromptScriptData */
     PromptScriptData: {
       prompt: string;
+      title?: string;
       script?: components["schemas"]["ScriptData"][];
       reference?: components["schemas"]["Reference"][];
       situation?: string;

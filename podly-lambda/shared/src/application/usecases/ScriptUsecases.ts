@@ -78,6 +78,9 @@ export class CreateScriptUseCase {
 
     const referenceUrls = request.reference?.map((r) => r.url);
 
+    const miniModel = "gpt-5-mini";
+    const gptModel = "gpt-5";
+
     const rssFieldsAndUrls = [
       {
         field: "general",
@@ -204,7 +207,7 @@ export class CreateScriptUseCase {
         summarizellm: {
           agent: "customOpenaiAgent",
           params: {
-            model: "gpt-4.1",
+            model: miniModel,
             apiKey: process.env.OPENAI_API_KEY,
             response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
           },
@@ -318,7 +321,7 @@ export class CreateScriptUseCase {
         summarizellm: {
           agent: "customOpenaiAgent",
           params: {
-            model: "gpt-4.1",
+            model: miniModel,
             apiKey: process.env.OPENAI_API_KEY,
             response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
           },
@@ -338,7 +341,7 @@ export class CreateScriptUseCase {
         judgeRssNeed: {
           agent: "customOpenaiAgent",
           params: {
-            model: "gpt-4o-mini",
+            model: miniModel,
             apiKey: process.env.OPENAI_API_KEY,
             response_format: zodResponseFormat(
               judgeRssNeedFormat,
@@ -394,7 +397,7 @@ export class CreateScriptUseCase {
         generateWebSearchQuery: {
           agent: "customOpenaiAgent",
           params: {
-            model: "gpt-4o-mini",
+            model: miniModel,
             apiKey: process.env.OPENAI_API_KEY,
             response_format: zodResponseFormat(
               z.object({ query: z.string() }),
@@ -484,7 +487,7 @@ export class CreateScriptUseCase {
         summarizellm: {
           agent: "customOpenaiAgent",
           params: {
-            model: "gpt-4.1",
+            model: miniModel,
             apiKey: process.env.OPENAI_API_KEY,
             response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
           },
@@ -519,7 +522,7 @@ export class CreateScriptUseCase {
         llm: {
           agent: "customOpenaiAgent",
           params: {
-            model: "gpt-4.1",
+            model: miniModel,
             apiKey: process.env.OPENAI_API_KEY,
             response_format: zodResponseFormat(podcastJsonFormat, "podcast"),
           },
@@ -666,6 +669,7 @@ export class CreateScriptUseCase {
 
     return {
       prompt: request.prompt,
+      title: "サンプルポッドキャストタイトル",
       script: scriptResult,
       reference: outputReference || [],
       situation: request.situation,

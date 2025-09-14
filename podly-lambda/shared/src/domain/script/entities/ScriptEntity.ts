@@ -7,6 +7,7 @@ export interface ScriptData {
 
 export interface PromptScriptData {
   prompt: string;
+  title?: string;
   script?: ScriptData[];
   reference?: Reference[];
   situation?: string;

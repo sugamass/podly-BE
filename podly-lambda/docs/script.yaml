@@ -121,6 +121,10 @@ components:
           type: string
           x-stoplight:
             id: to9b9622g3ot3
+        title:
+          type: string
+          x-stoplight:
+            id: title_field_12345
         script:
           type: array
           x-stoplight:

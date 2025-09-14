@@ -17,6 +17,7 @@ export const ScriptDataSchema = z.object({
 
 export const PromptScriptDataSchema = z.object({
   prompt: z.string(),
+  title: z.string().optional(),
   script: z.array(ScriptDataSchema).optional(),
   reference: z.array(ReferenceSchema).optional(),
   situation: z.string().optional(),

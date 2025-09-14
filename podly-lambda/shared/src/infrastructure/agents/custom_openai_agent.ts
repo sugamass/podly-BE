@@ -242,7 +242,7 @@ export const openAIAgent: AgentFunction<
     !modelName.startsWith("o3") &&
     !web_search_options
   ) {
-    chatParams.temperature = temperature ?? 0.7;
+    chatParams.temperature = temperature ?? 1;
   }
 
   if (!stream && !dataStream) {

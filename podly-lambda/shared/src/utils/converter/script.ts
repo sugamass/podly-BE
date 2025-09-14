@@ -18,6 +18,7 @@ export function convertApiRequestToDomainInput(
   const convertedPreviousScript = apiRequest.previousScript?.map(
     (apiScript: ApiPromptScriptData): DomainPromptScriptData => ({
       prompt: apiScript.prompt,
+      title: apiScript.title,
       script: apiScript.script,
       reference: apiScript.reference, // 型が一致するのでそのまま使用
       situation: apiScript.situation,
@@ -42,6 +43,7 @@ export function convertDomainOutputToApiResponse(
   // newScriptをドメイン型からAPI型に変換
   const convertedNewScript: ApiPromptScriptData = {
     prompt: domainOutput.newScript.prompt,
+    title: domainOutput.newScript.title,
     script: domainOutput.newScript.script,
     reference: domainOutput.newScript.reference, // 型が一致するのでそのまま使用
     situation: domainOutput.newScript.situation,
@@ -51,6 +53,7 @@ export function convertDomainOutputToApiResponse(
   const convertedPreviousScript = domainOutput.previousScript?.map(
     (domainScript: DomainPromptScriptData): ApiPromptScriptData => ({
       prompt: domainScript.prompt,
+      title: domainScript.title,
       script: domainScript.script,
       reference: domainScript.reference, // 型が一致するのでそのまま使用
       situation: domainScript.situation,
