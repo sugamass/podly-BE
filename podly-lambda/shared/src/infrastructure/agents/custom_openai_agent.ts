@@ -224,6 +224,7 @@ export const openAIAgent: AgentFunction<
     dangerouslyAllowBrowser: !!forWeb,
   });
 
+  console.log("messagesCopy:", messagesCopy);
   const modelName = model || "gpt-4o";
   const chatParams: OpenAI.ChatCompletionCreateParams = {
     model: modelName,

@@ -170,3 +170,7 @@ export const judgeRssNeedPrompt = `
 }
 </例>
 `;
+
+export const titleGenerationPrompt = `
+次に与えるポッドキャストの内容について、タイトルを生成してください。タイトル以外は何も出力しないでください。
+`;

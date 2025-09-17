@@ -11,6 +11,7 @@ import {
   generateWebSearchQuery,
   generatewebSearchUserPrompt,
   judgeRssNeedPrompt,
+  titleGenerationPrompt,
 } from "./SystemPrompts";
 import customOpenaiAgent from "../../infrastructure/agents/custom_openai_agent";
 import tavilySearchAgent from "../../infrastructure/agents/tavily_agent";
@@ -64,6 +65,7 @@ export class CreateScriptUseCase {
     request: CreateScriptUseCaseInput
   ): Promise<PromptScriptData> {
     const messages = [{ role: "system", content: schoolPrompt }];
+    const titleMessages = [{ role: "system", content: titleGenerationPrompt }];
 
     if (request.previousScript) {
       request.previousScript.forEach((s) => {
@@ -591,6 +593,24 @@ export class CreateScriptUseCase {
           },
           isResult: true,
         },
+        titleGeneration: {
+          agent: "customOpenaiAgent",
+          params: {
+            model: miniModel,
+            apiKey: process.env.OPENAI_API_KEY,
+            messages: titleMessages,
+          },
+          inputs: {
+            prompt: ":output.array.$0",
+          },
+        },
+        titleOutput: {
+          agent: "copyAgent",
+          inputs: {
+            title: ":titleGeneration.text",
+          },
+          isResult: true,
+        },
         urlArrayOutput: {
           agent: "copyAgent",
           anyInput: true,
@@ -636,6 +656,7 @@ export class CreateScriptUseCase {
 
     let generatedScriptString = "";
     let urlArrayOutput: any[] = [];
+    let titleOutput = "";
     for (const [_, value] of Object.entries(result)) {
       if (typeof value === "object" && value !== null) {
         for (const [key2, value2] of Object.entries(value)) {
@@ -644,6 +665,8 @@ export class CreateScriptUseCase {
             generatedScriptString = (value2 as any[])[0];
           } else if (key2 === "url") {
             urlArrayOutput = (value2 as any[])[0];
+          } else if (key2 === "title") {
+            titleOutput = value2 as string;
           }
         }
       }
@@ -669,7 +692,7 @@ export class CreateScriptUseCase {
 
     return {
       prompt: request.prompt,
-      title: "サンプルポッドキャストタイトル",
+      title: titleOutput,
       script: scriptResult || [],
       reference: outputReference || [],
       situation: request.situation || "school",
