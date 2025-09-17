@@ -116,6 +116,9 @@ components:
       type: object
       required:
         - prompt
+        - title
+        - script
+        - situation
       properties:
         prompt:
           type: string

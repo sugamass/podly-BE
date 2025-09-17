@@ -670,9 +670,9 @@ export class CreateScriptUseCase {
     return {
       prompt: request.prompt,
       title: "サンプルポッドキャストタイトル",
-      script: scriptResult,
+      script: scriptResult || [],
       reference: outputReference || [],
-      situation: request.situation,
+      situation: request.situation || "school",
     };
   }
 

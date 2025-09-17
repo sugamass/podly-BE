@@ -17,10 +17,10 @@ export const ScriptDataSchema = z.object({
 
 export const PromptScriptDataSchema = z.object({
   prompt: z.string(),
-  title: z.string().optional(),
-  script: z.array(ScriptDataSchema).optional(),
+  title: z.string(),
+  script: z.array(ScriptDataSchema),
   reference: z.array(ReferenceSchema).optional(),
-  situation: z.string().optional(),
+  situation: z.string(),
 });
 
 export const PostCreateScriptRequestSchema = z.object({

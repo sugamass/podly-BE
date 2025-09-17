@@ -7,10 +7,10 @@ export interface ScriptData {
 
 export interface PromptScriptData {
   prompt: string;
-  title?: string;
-  script?: ScriptData[];
+  title: string;
+  script: ScriptData[];
   reference?: Reference[];
-  situation?: string;
+  situation: string;
 }
 
 // UseCaseの入力・出力型（ドメイン固有）
