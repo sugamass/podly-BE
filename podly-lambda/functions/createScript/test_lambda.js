@@ -3,7 +3,7 @@ const { createScript: handler } = require("./dist/index.js");
 
 // テストリクエストを読み込み
 const testRequest = {
-  prompt: "最新の政治ニュースについてまとめて",
+  prompt: "量子コンピュータについて",
   // previousScript: [
   //   {
   //     prompt: "問題と課題の違いは？",

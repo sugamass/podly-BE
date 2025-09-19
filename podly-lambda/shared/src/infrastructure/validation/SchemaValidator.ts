@@ -47,6 +47,7 @@ export const AudioScriptDataSchema = z.object({
 });
 
 export const AudioPreviewRequestSchema = z.object({
+  title: z.string(),
   script: z.array(AudioScriptDataSchema),
   tts: z.string(),
   voices: z.array(z.string()),

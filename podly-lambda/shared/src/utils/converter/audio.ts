@@ -12,6 +12,7 @@ interface ScriptData {
 }
 
 interface AudioPreviewRequest {
+  title: string;
   script: ScriptData[];
   tts: string;
   voices: string[];

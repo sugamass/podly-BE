@@ -65,11 +65,16 @@ components:
         id: h3odvb1rxkzll
       type: object
       required:
+        - title
         - script
         - tts
         - voices
         - speakers
       properties:
+        title:
+          type: string
+          x-stoplight:
+            id: title123456
         script:
           type: array
           x-stoplight:
