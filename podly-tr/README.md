@@ -51,6 +51,7 @@ cp terraform.tfvars.example terraform.tfvars
 # API Keys
 openai_api_key = "your-openai-api-key"
 tavily_api_key = "your-tavily-api-key"
+gemini_api_key = "your-gemini-api-key"
 
 # Lambda Packages (ビルド後に自動生成される想定)
 lambda_packages = {
@@ -107,6 +108,7 @@ podly-tr/
 
 - `OPENAI_API_KEY` - OpenAI API キー
 - `TAVILY_API_KEY` - Tavily API キー
+- `GEMINI_API_KEY` - Gemini API キー
 
 ### Lambda 関数の環境変数
 

@@ -10,11 +10,11 @@ environment  = "dev"
 lambda_packages = {
   create_script = {
     filename         = "../podly-lambda/dist/create-script.zip"
-    source_code_hash = "15dbdba6bf3e0bc03fe0b521b5c39ac5fcbc37a702313bfb4eb5ec3f450c587c"
+    source_code_hash = "17732a54d6dcd115bcd91f3443c40f2742219d5d0d0a2f517ef7b772754e122b"
   }
   create_preview_audio = {
     filename         = "../podly-lambda/dist/create-preview-audio.zip"
-    source_code_hash = "46a0407ba4def36b6c6ce5530b02b4306b77a266313d623c54802952f1796349"
+    source_code_hash = "e5b7793561c48d794575c516c2619e4066f85d73b32010fcd715c2a57d056776"
   }
 }
 
